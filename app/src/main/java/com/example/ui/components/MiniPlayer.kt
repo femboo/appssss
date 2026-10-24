@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -12,15 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -30,20 +23,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.R
 import com.example.data.model.Track
-import com.example.ui.theme.HeartRed
-import com.example.ui.theme.LeafGreen
-import com.example.ui.theme.ObsidianCard
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 
 @Composable
 fun MiniPlayer(
@@ -67,36 +56,36 @@ fun MiniPlayer(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .testTag("mini_player"),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shadowElevation = 8.dp,
-        tonalElevation = 4.dp,
+        tonalElevation = 2.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column {
-            // Progress Bar at the top
+            // Track progress bar
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(2.5.dp),
                 color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Artwork
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.surface),
                     contentAlignment = Alignment.Center
                 ) {
@@ -104,19 +93,19 @@ fun MiniPlayer(
                         AsyncImage(
                             model = track.artworkUrl,
                             contentDescription = track.displayTitle,
-                            modifier = Modifier.size(46.dp),
+                            modifier = Modifier.size(42.dp),
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        androidx.compose.foundation.Image(
-                            painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_music_note),
+                        Image(
+                            painter = painterResource(R.drawable.ic_music_note),
                             contentDescription = null,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 // Title & Artist
                 Column(
@@ -126,16 +115,16 @@ fun MiniPlayer(
                         text = track.displayTitle,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
+                            fontSize = 13.5.sp
                         ),
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = track.displayArtist,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -144,14 +133,14 @@ fun MiniPlayer(
                 // Like button
                 IconButton(
                     onClick = onLikeClick,
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(
-                            if (isLiked) com.example.R.drawable.ic_heart_filled else com.example.R.drawable.ic_heart
+                    Image(
+                        painter = painterResource(
+                            if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart
                         ),
                         contentDescription = "Любимое",
-                        modifier = Modifier.size(19.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
@@ -159,22 +148,22 @@ fun MiniPlayer(
                 IconButton(
                     onClick = onPlayPauseClick,
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(36.dp)
                         .testTag("mini_player_play_pause")
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                             color = MaterialTheme.colorScheme.primary,
                             strokeWidth = 2.dp
                         )
                     } else {
-                        androidx.compose.foundation.Image(
-                            painter = androidx.compose.ui.res.painterResource(
-                                if (isPlaying) com.example.R.drawable.ic_pause else com.example.R.drawable.ic_play
+                        Image(
+                            painter = painterResource(
+                                if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
                             ),
                             contentDescription = if (isPlaying) "Пауза" else "Играть",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
                 }
@@ -182,12 +171,12 @@ fun MiniPlayer(
                 // Next
                 IconButton(
                     onClick = onNextClick,
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(36.dp)
                 ) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_next),
+                    Image(
+                        painter = painterResource(R.drawable.ic_next),
                         contentDescription = "Следующий",
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                 }
             }

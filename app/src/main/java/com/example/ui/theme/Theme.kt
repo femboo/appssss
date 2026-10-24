@@ -15,14 +15,25 @@ fun LeafMusicTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = remember(isDark, accentColor, isWhiteTheme) {
-        val onPrimaryColor = if (isWhiteTheme) Color(0xFF111111) else Color.White
+        val effectiveAccent = if (!isDark && isWhiteTheme) {
+            Color(0xFF18181B) // In light mode, white theme uses sleek deep graphite accent
+        } else {
+            accentColor
+        }
+
+        val onPrimaryColor = if (isDark && isWhiteTheme) {
+            Color(0xFF111111)
+        } else {
+            Color.White
+        }
+
         if (isDark) {
             darkColorScheme(
-                primary = accentColor,
+                primary = effectiveAccent,
                 onPrimary = onPrimaryColor,
-                primaryContainer = accentColor.copy(alpha = 0.25f),
+                primaryContainer = effectiveAccent.copy(alpha = 0.22f),
                 onPrimaryContainer = Color.White,
-                secondary = accentColor,
+                secondary = effectiveAccent,
                 onSecondary = onPrimaryColor,
                 secondaryContainer = Color(0xFF18181B),
                 onSecondaryContainer = Color.White,
@@ -39,11 +50,11 @@ fun LeafMusicTheme(
             )
         } else {
             lightColorScheme(
-                primary = accentColor,
+                primary = effectiveAccent,
                 onPrimary = onPrimaryColor,
-                primaryContainer = accentColor.copy(alpha = 0.25f),
+                primaryContainer = effectiveAccent.copy(alpha = 0.16f),
                 onPrimaryContainer = Color.Black,
-                secondary = accentColor,
+                secondary = effectiveAccent,
                 onSecondary = onPrimaryColor,
                 secondaryContainer = Color(0xFFE4E4E7),
                 onSecondaryContainer = Color.Black,

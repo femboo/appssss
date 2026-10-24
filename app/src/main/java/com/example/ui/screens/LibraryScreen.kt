@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,11 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.QueueMusic
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -57,27 +53,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.model.Playlist
 import com.example.data.model.Track
 import com.example.data.repository.LeafRepository
 import com.example.player.AudioPlayerManager
 import com.example.ui.components.CreatePlaylistDialog
 import com.example.ui.components.TrackItem
-import com.example.ui.theme.ErrorRed
-import com.example.ui.theme.HeartRed
-import com.example.ui.theme.LeafGreen
-import com.example.ui.theme.ObsidianBackground
-import com.example.ui.theme.ObsidianCard
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.TextTertiary
 import kotlinx.coroutines.launch
 
 @Composable
@@ -100,7 +90,9 @@ fun LibraryScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var playlistToDelete by remember { mutableStateOf<Playlist?>(null) }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "syncRotation")
+    val accentColor = MaterialTheme.colorScheme.primary
+
+    val infiniteTransition = rememberInfiniteTransition(label = "syncSpin")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
@@ -121,10 +113,21 @@ fun LibraryScreen(
     playlistToDelete?.let { pl ->
         AlertDialog(
             onDismissRequest = { playlistToDelete = null },
-            containerColor = ObsidianCard,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
             shape = RoundedCornerShape(20.dp),
-            title = { Text("Удалить плейлист?", color = TextPrimary, fontWeight = FontWeight.Bold) },
-            text = { Text("Плейлист «${pl.name}» будет удалён из вашей медиатеки.", color = TextSecondary) },
+            title = {
+                Text(
+                    "Удалить плейлист?",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    "Плейлист «${pl.name}» будет удалён из вашей медиатеки.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
             confirmButton = {
                 Button(
                     onClick = {
@@ -132,14 +135,14 @@ fun LibraryScreen(
                         playlistToDelete = null
                         scope.launch { repository.deletePlaylist(id) }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Удалить", color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { playlistToDelete = null }) {
-                    Text("Отмена", color = TextSecondary)
+                    Text("Отмена", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -148,7 +151,7 @@ fun LibraryScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(ObsidianBackground)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Header
@@ -163,12 +166,12 @@ fun LibraryScreen(
                 Text(
                     text = "Медиатека",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Синхронизировано: ${playlists.size} плейлистов, ${likedTracks.size} любимых",
+                    text = "${playlists.size} плейлистов • ${likedTracks.size} любимых",
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -182,28 +185,23 @@ fun LibraryScreen(
                     Icon(
                         imageVector = Icons.Default.Sync,
                         contentDescription = "Синхронизировать",
-                        tint = if (isSyncing) LeafGreen else TextSecondary,
+                        tint = if (isSyncing) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
-                            .size(24.dp)
+                            .size(22.dp)
                             .then(if (isSyncing) Modifier.rotate(rotation) else Modifier)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
-
-                // Create Playlist Button
+                // Add playlist button
                 IconButton(
                     onClick = { showCreateDialog = true },
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .testTag("library_create_playlist_btn")
+                    modifier = Modifier.testTag("library_create_playlist")
                 ) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_plus),
+                    Icon(
+                        imageVector = Icons.Default.Add,
                         contentDescription = "Создать плейлист",
-                        modifier = Modifier.size(20.dp)
+                        tint = accentColor,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
@@ -211,24 +209,28 @@ fun LibraryScreen(
 
         // Filter chips: Все, Плейлисты, Любимые
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf("Все", "Плейлисты", "Любимые").forEachIndexed { idx, label ->
-                val isSelected = selectedFilterIndex == idx
+            val filterLabels = listOf("Все", "Плейлисты", "Любимые")
+            filterLabels.forEachIndexed { index, label ->
+                val isSelected = selectedFilterIndex == index
                 FilterChip(
                     selected = isSelected,
-                    onClick = { selectedFilterIndex = idx },
+                    onClick = { selectedFilterIndex = index },
                     label = {
                         Text(
                             text = label,
-                            color = if (isSelected) Color.Black else TextSecondary,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 13.sp
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = LeafGreen,
-                        containerColor = ObsidianCard
+                        selectedContainerColor = accentColor,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(16.dp),
                     border = null
@@ -236,25 +238,26 @@ fun LibraryScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // Content
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Pinned Liked Card (when "Все" or "Любимые" is selected)
+            // "Любимые треки" banner card (shown when "Все" or "Любимые" is selected)
             if (selectedFilterIndex == 0 || selectedFilterIndex == 2) {
-                item(key = "liked_header_card") {
+                item {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable { selectedFilterIndex = 2 }
-                            .testTag("library_liked_card"),
-                        colors = CardDefaults.cardColors(containerColor = ObsidianCard),
-                        shape = RoundedCornerShape(16.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable {
+                                if (likedTracks.isNotEmpty()) {
+                                    playerManager.playTrack(likedTracks.first(), likedTracks)
+                                }
+                            }
+                            .testTag("library_liked_banner"),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Row(
                             modifier = Modifier
@@ -264,15 +267,15 @@ fun LibraryScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(56.dp)
+                                    .size(54.dp)
                                     .clip(RoundedCornerShape(12.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                androidx.compose.foundation.Image(
-                                    painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_likes_banner),
-                                    contentDescription = "Любимые",
+                                Image(
+                                    painter = painterResource(R.drawable.ic_likes_banner),
+                                    contentDescription = "Любимые треки",
                                     modifier = Modifier.fillMaxSize(),
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                    contentScale = ContentScale.Crop
                                 )
                             }
 
@@ -282,13 +285,13 @@ fun LibraryScreen(
                                 Text(
                                     text = "Любимые треки",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = TextPrimary
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "${likedTracks.size} треков • Закреплено",
+                                    text = "${likedTracks.size} треков",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
@@ -300,11 +303,11 @@ fun LibraryScreen(
                                     modifier = Modifier
                                         .size(42.dp)
                                         .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary)
+                                        .background(accentColor)
                                         .testTag("library_play_liked")
                                 ) {
-                                    androidx.compose.foundation.Image(
-                                        painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_play),
+                                    Image(
+                                        painter = painterResource(R.drawable.ic_play),
                                         contentDescription = "Играть всё",
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -325,7 +328,11 @@ fun LibraryScreen(
                                 .padding(top = 40.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("У вас пока нет сохранённых треков", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "У вас пока нет сохранённых треков",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
                     }
                 } else {
@@ -353,7 +360,11 @@ fun LibraryScreen(
                                 .padding(top = 40.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Плейлистов пока нет", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "Плейлистов пока нет",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
                     }
                 } else {
@@ -364,7 +375,7 @@ fun LibraryScreen(
                                 .clip(RoundedCornerShape(14.dp))
                                 .clickable { onPlaylistClick(playlist) }
                                 .testTag("library_playlist_${playlist.id}"),
-                            colors = CardDefaults.cardColors(containerColor = ObsidianCard),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                             shape = RoundedCornerShape(14.dp)
                         ) {
                             Row(
@@ -375,15 +386,15 @@ fun LibraryScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(52.dp)
+                                        .size(50.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                                        .background(accentColor.copy(alpha = 0.16f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    androidx.compose.foundation.Image(
-                                        painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_bookshelf),
+                                    Image(
+                                        painter = painterResource(R.drawable.ic_bookshelf),
                                         contentDescription = null,
-                                        modifier = Modifier.size(26.dp)
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
 
@@ -393,7 +404,7 @@ fun LibraryScreen(
                                     Text(
                                         text = playlist.name,
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = TextPrimary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -401,7 +412,7 @@ fun LibraryScreen(
                                     Text(
                                         text = "${playlist.trackCount} треков • Плейлист",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
 
@@ -409,8 +420,8 @@ fun LibraryScreen(
                                     onClick = { playlistToDelete = playlist },
                                     modifier = Modifier.size(36.dp)
                                 ) {
-                                    androidx.compose.foundation.Image(
-                                        painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_trash),
+                                    Image(
+                                        painter = painterResource(R.drawable.ic_trash),
                                         contentDescription = "Удалить плейлист",
                                         modifier = Modifier.size(18.dp)
                                     )

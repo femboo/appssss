@@ -96,6 +96,9 @@ class ApiClient private constructor(private val context: Context) {
      * If it is relative (e.g. /api/yt-audio/... or /static/uploads/...), prepends base URL.
      */
     fun resolveMediaUrl(rawUrl: String): String {
+        if (rawUrl.startsWith("//")) {
+            return "https:$rawUrl"
+        }
         if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
             return rawUrl
         }

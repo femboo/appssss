@@ -53,7 +53,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,11 +75,6 @@ import coil.compose.AsyncImage
 import com.example.R
 import com.example.data.repository.LeafRepository
 import com.example.ui.components.ServerUrlDialog
-import com.example.ui.theme.ErrorRed
-import com.example.ui.theme.HeartRed
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.TextTertiary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -111,7 +105,7 @@ fun ProfileScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var isUploadingAvatar by remember { mutableStateOf(false) }
 
-    // Exactly matching the PC web client themes
+    // Themes exactly matching PC web client
     val themeChoices = listOf(
         ColorThemeChoice("green", "Зелёная", "#22C55E"),
         ColorThemeChoice("blue", "Синяя", "#3B82F6"),
@@ -169,14 +163,14 @@ fun ProfileScreen(
             title = {
                 Text(
                     text = "Выйти из аккаунта?",
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
                     text = "Вы будете отключены от текущей сессии на https://leafmusic.fun.",
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             confirmButton = {
@@ -188,14 +182,14 @@ fun ProfileScreen(
                             onLogoutSuccess()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Выйти", color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Отмена", color = TextSecondary)
+                    Text("Отмена", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -216,19 +210,11 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(R.drawable.ic_leaf),
-                    contentDescription = "Leaf",
-                    modifier = Modifier.size(28.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = "Настройки",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = TextPrimary
-                )
-            }
+            Text(
+                text = "Настройки",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
             IconButton(
                 onClick = { scope.launch { repository.syncLibrary() } },
@@ -238,7 +224,7 @@ fun ProfileScreen(
                 Icon(
                     imageVector = Icons.Default.Sync,
                     contentDescription = "Синхронизировать",
-                    tint = if (isSyncing) accentColor else TextSecondary,
+                    tint = if (isSyncing) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .size(22.dp)
                         .then(if (isSyncing) Modifier.rotate(rotation) else Modifier)
@@ -260,7 +246,7 @@ fun ProfileScreen(
                     .padding(18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Avatar with upload trigger
+                // Resolved Avatar with Photo Picker trigger
                 Box(
                     modifier = Modifier
                         .size(68.dp)
@@ -273,10 +259,10 @@ fun ProfileScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    val avatarUrl = user?.avatarUrl
-                    if (!avatarUrl.isNullOrBlank()) {
+                    val resolvedAvatar = repository.resolveAvatarUrl(user?.avatarUrl)
+                    if (!resolvedAvatar.isNullOrBlank()) {
                         AsyncImage(
-                            model = avatarUrl,
+                            model = resolvedAvatar,
                             contentDescription = "Аватар",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
@@ -328,7 +314,7 @@ fun ProfileScreen(
                         Text(
                             text = user?.username?.takeIf { it.isNotBlank() } ?: user?.login ?: "Пользователь",
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         if (user?.verified == true) {
                             Spacer(modifier = Modifier.width(6.dp))
@@ -343,11 +329,11 @@ fun ProfileScreen(
                     Text(
                         text = "@${user?.login ?: "guest"}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     val tier = user?.subscription?.get("tier")?.toString() ?: "free"
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Surface(
                         color = accentColor.copy(alpha = 0.16f),
                         shape = RoundedCornerShape(6.dp)
@@ -389,12 +375,12 @@ fun ProfileScreen(
                         Text(
                             text = "${likedTracks.size}",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Любимых",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -419,12 +405,12 @@ fun ProfileScreen(
                         Text(
                             text = "${playlists.size}",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Плейлистов",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -451,17 +437,17 @@ fun ProfileScreen(
                     Text(
                         text = "Внешний вид",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Mode switch: Dark vs Light
+                // Dark vs Light Mode
                 Text(
                     text = "Стиль оформления",
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -486,7 +472,7 @@ fun ProfileScreen(
                         color = if (themeState.isDark) accentColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface,
                         border = androidx.compose.foundation.BorderStroke(
                             width = if (themeState.isDark) 2.dp else 1.dp,
-                            color = if (themeState.isDark) accentColor else Color.Transparent
+                            color = if (themeState.isDark) accentColor else MaterialTheme.colorScheme.outline
                         )
                     ) {
                         Row(
@@ -497,16 +483,16 @@ fun ProfileScreen(
                             Icon(
                                 imageVector = Icons.Default.DarkMode,
                                 contentDescription = null,
-                                tint = if (themeState.isDark) accentColor else TextSecondary,
+                                tint = if (themeState.isDark) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Тёмный режим",
+                                text = "Тёмный",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = if (themeState.isDark) FontWeight.Bold else FontWeight.Normal
                                 ),
-                                color = if (themeState.isDark) TextPrimary else TextSecondary
+                                color = if (themeState.isDark) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -529,7 +515,7 @@ fun ProfileScreen(
                         color = if (!themeState.isDark) accentColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface,
                         border = androidx.compose.foundation.BorderStroke(
                             width = if (!themeState.isDark) 2.dp else 1.dp,
-                            color = if (!themeState.isDark) accentColor else Color.Transparent
+                            color = if (!themeState.isDark) accentColor else MaterialTheme.colorScheme.outline
                         )
                     ) {
                         Row(
@@ -540,16 +526,16 @@ fun ProfileScreen(
                             Icon(
                                 imageVector = Icons.Default.LightMode,
                                 contentDescription = null,
-                                tint = if (!themeState.isDark) accentColor else TextSecondary,
+                                tint = if (!themeState.isDark) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Светлый режим",
+                                text = "Светлый",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = if (!themeState.isDark) FontWeight.Bold else FontWeight.Normal
                                 ),
-                                color = if (!themeState.isDark) TextPrimary else TextSecondary
+                                color = if (!themeState.isDark) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -557,11 +543,11 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Color themes
+                // Color Themes (Leaf palette)
                 Text(
                     text = "Цветовая тема (Leaf)",
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -597,7 +583,7 @@ fun ProfileScreen(
                                 }
                                 .border(
                                     width = if (isSelected) 2.dp else 1.dp,
-                                    color = if (isSelected) colorParsed else Color.Transparent,
+                                    color = if (isSelected) colorParsed else MaterialTheme.colorScheme.outline,
                                     shape = RoundedCornerShape(12.dp)
                                 )
                         ) {
@@ -618,7 +604,7 @@ fun ProfileScreen(
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         fontSize = 13.sp
                                     ),
-                                    color = TextPrimary
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 if (isSelected) {
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -648,7 +634,7 @@ fun ProfileScreen(
                 Text(
                     text = "Сообщество и поддержка",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 OutlinedButton(
@@ -667,7 +653,7 @@ fun ProfileScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Канал в Telegram", color = TextPrimary)
+                    Text("Канал в Telegram", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
@@ -692,14 +678,14 @@ fun ProfileScreen(
                     Text(
                         text = "Сервер Leaf Web",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = repository.getBaseUrl(),
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedButton(
@@ -707,7 +693,7 @@ fun ProfileScreen(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Сменить адрес сервера", color = TextPrimary)
+                    Text("Сменить адрес сервера", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
@@ -717,7 +703,7 @@ fun ProfileScreen(
         // Logout Button
         Button(
             onClick = { showLogoutDialog = true },
-            colors = ButtonDefaults.buttonColors(containerColor = ErrorRed.copy(alpha = 0.15f)),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -730,7 +716,7 @@ fun ProfileScreen(
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Выйти из аккаунта", color = ErrorRed, fontWeight = FontWeight.SemiBold)
+            Text("Выйти из аккаунта", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
         }
 
         Spacer(modifier = Modifier.height(24.dp))

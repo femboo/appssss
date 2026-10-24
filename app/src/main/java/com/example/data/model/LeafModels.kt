@@ -180,3 +180,40 @@ data class UserSearchItem(
 data class UsersSearchResponse(
     @Json(name = "users") val users: List<UserSearchItem> = emptyList()
 )
+
+@JsonClass(generateAdapter = true)
+data class LyricLine(
+    @Json(name = "time") val time: Double? = null,
+    @Json(name = "text") val text: String = ""
+)
+
+@JsonClass(generateAdapter = true)
+data class LyricsResponse(
+    @Json(name = "found") val found: Boolean? = false,
+    @Json(name = "synced") val synced: Boolean? = false,
+    @Json(name = "lines") val lines: List<LyricLine> = emptyList(),
+    @Json(name = "lyrics") val plainLyrics: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class UserPublicProfile(
+    @Json(name = "id") val id: Any? = null,
+    @Json(name = "login") val login: String = "",
+    @Json(name = "username") val username: String? = null,
+    @Json(name = "avatar_url") val avatarUrl: String? = null,
+    @Json(name = "background_url") val backgroundUrl: String? = null,
+    @Json(name = "theme") val theme: String? = null,
+    @Json(name = "theme_color") val themeColor: String? = null,
+    @Json(name = "verified") val verified: Boolean? = false,
+    @Json(name = "bio") val bio: String? = null,
+    @Json(name = "status") val status: String? = null,
+    @Json(name = "playlists_count") val playlistsCount: Int? = 0,
+    @Json(name = "likes_count") val likesCount: Int? = 0,
+    @Json(name = "online") val online: Boolean? = false
+)
+
+@JsonClass(generateAdapter = true)
+data class UserLibraryResponse(
+    @Json(name = "top_tracks") val topTracks: List<Track> = emptyList(),
+    @Json(name = "playlists") val playlists: List<Playlist> = emptyList()
+)

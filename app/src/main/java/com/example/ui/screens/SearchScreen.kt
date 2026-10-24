@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,13 +19,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
@@ -73,12 +74,6 @@ import com.example.data.model.UserSearchItem
 import com.example.data.repository.LeafRepository
 import com.example.player.AudioPlayerManager
 import com.example.ui.components.TrackItem
-import com.example.ui.theme.LeafGreen
-import com.example.ui.theme.ObsidianBackground
-import com.example.ui.theme.ObsidianCard
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.TextTertiary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -88,6 +83,7 @@ fun SearchScreen(
     repository: LeafRepository,
     playerManager: AudioPlayerManager,
     onAddToPlaylist: (Track) -> Unit,
+    onOpenUserProfile: (userLogin: String, username: String?, avatarUrl: String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
@@ -114,17 +110,27 @@ fun SearchScreen(
 
     val quickQueries = listOf("lofi", "chillhop", "phonk", "synthwave", "rock", "ambient")
 
-    // Live search suggestions debouncer
+    // Live search suggestions & user mode detection
     LaunchedEffect(searchQuery) {
         val q = searchQuery.trim()
         if (q.startsWith("Leaf:", ignoreCase = true)) {
             isUserSearchMode = true
             showSuggestions = false
             suggestions = emptyList()
+            // Auto-trigger user search as user types after Leaf:
+            val userQ = q.removePrefix("Leaf:").removePrefix("leaf:").trim()
+            if (userQ.length >= 2) {
+                delay(250)
+                val res = repository.searchUsers(q)
+                if (res.isSuccess) {
+                    userResults = res.getOrNull() ?: emptyList()
+                    hasSearched = true
+                }
+            }
         } else {
             isUserSearchMode = false
             if (q.length >= 2 && !hasSearched) {
-                delay(250)
+                delay(200)
                 val res = repository.getSuggestions(q)
                 suggestions = res.getOrNull()?.filter { it.isNotBlank() && it != q } ?: emptyList()
                 showSuggestions = suggestions.isNotEmpty()
@@ -174,14 +180,14 @@ fun SearchScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(ObsidianBackground)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Title
         Text(
             text = "Поиск",
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
         )
 
@@ -192,9 +198,19 @@ fun SearchScreen(
                 searchQuery = it
                 hasSearched = false
             },
-            placeholder = { Text("Треки, артисты или Leaf: имя...", color = TextTertiary, fontSize = 14.sp) },
+            placeholder = {
+                Text(
+                    "Треки, артисты или Leaf: имя...",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    fontSize = 14.sp
+                )
+            },
             leadingIcon = {
-                Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = accentColor)
+                Icon(
+                    imageVector = if (isUserSearchMode) Icons.Default.PersonSearch else Icons.Default.Search,
+                    contentDescription = null,
+                    tint = accentColor
+                )
             },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
@@ -203,8 +219,13 @@ fun SearchScreen(
                         hasSearched = false
                         suggestions = emptyList()
                         showSuggestions = false
+                        isUserSearchMode = false
                     }) {
-                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Очистить", tint = TextSecondary)
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Очистить",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             },
@@ -212,9 +233,11 @@ fun SearchScreen(
             shape = RoundedCornerShape(18.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = accentColor,
-                unfocusedBorderColor = ObsidianCard,
-                focusedContainerColor = ObsidianCard,
-                unfocusedContainerColor = ObsidianCard
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { executeSearch(searchQuery) }),
@@ -223,14 +246,14 @@ fun SearchScreen(
                 .testTag("search_input")
         )
 
-        // Live Suggestions Overlay / List
+        // Live Suggestions
         AnimatedVisibility(visible = showSuggestions && suggestions.isNotEmpty()) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = ObsidianCard)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
                     suggestions.take(5).forEach { item ->
@@ -244,12 +267,17 @@ fun SearchScreen(
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(16.dp))
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = item,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = TextPrimary
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -259,48 +287,19 @@ fun SearchScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Source Filters & User Search Quick Button
-        FlowRow(
+        // Music Source Filters Row (ONLY MUSIC SOURCES!)
+        val sources = listOf(
+            "all" to ("Все" to null),
+            "soundcloud" to ("SoundCloud" to R.drawable.ic_soundcloud),
+            "ytmusic" to ("YouTube" to R.drawable.ic_youtube),
+            "yandex_music" to ("Яндекс" to R.drawable.ic_yandex)
+        )
+
+        LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            contentPadding = PaddingValues(vertical = 2.dp)
         ) {
-            // "Leaf: " Quick Toggle Button
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = if (isUserSearchMode || searchQuery.startsWith("Leaf:", ignoreCase = true)) accentColor else ObsidianCard,
-                modifier = Modifier.clickable {
-                    searchQuery = "Leaf: "
-                    isUserSearchMode = true
-                }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PersonSearch,
-                        contentDescription = null,
-                        tint = if (isUserSearchMode) Color.Black else accentColor,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Пользователи (Leaf:)",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = if (isUserSearchMode) Color.Black else TextPrimary
-                    )
-                }
-            }
-
-            // Sources with REAL ICONS
-            val sources = listOf(
-                "all" to ("Все" to null),
-                "soundcloud" to ("SoundCloud" to R.drawable.ic_soundcloud),
-                "ytmusic" to ("YouTube" to R.drawable.ic_youtube),
-                "yandex_music" to ("Яндекс" to R.drawable.ic_yandex)
-            )
-
-            sources.forEach { (srcKey, pair) ->
+            items(sources) { (srcKey, pair) ->
                 val (label, iconRes) = pair
                 val isSelected = selectedSource == srcKey && !isUserSearchMode
 
@@ -326,14 +325,14 @@ fun SearchScreen(
                     label = {
                         Text(
                             text = label,
-                            color = if (isSelected) Color.Black else TextSecondary,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 12.sp
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = accentColor,
-                        containerColor = ObsidianCard
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(16.dp),
                     border = null
@@ -360,7 +359,7 @@ fun SearchScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = if (isUserSearchMode) "Поиск пользователей..." else "Ищем треки...",
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -385,10 +384,23 @@ fun SearchScreen(
                                 .padding(top = 48.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(48.dp))
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.size(48.dp)
+                            )
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text("Пользователи не найдены", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                            Text("Проверьте правильность логина после «Leaf:»", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                            Text(
+                                "Пользователи не найдены",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                "Проверьте правильность логина после «Leaf:»",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     } else {
                         LazyColumn(
@@ -398,19 +410,24 @@ fun SearchScreen(
                         ) {
                             items(userResults, key = { it.login }) { userItem ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(containerColor = ObsidianCard),
-                                    shape = RoundedCornerShape(14.dp)
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onOpenUserProfile(userItem.login, userItem.username, userItem.avatarUrl)
+                                        }
+                                        .testTag("user_item_${userItem.login}"),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                    shape = RoundedCornerShape(16.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(12.dp),
+                                            .padding(14.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(48.dp)
+                                                .size(50.dp)
                                                 .clip(CircleShape)
                                                 .background(MaterialTheme.colorScheme.primaryContainer),
                                             contentAlignment = Alignment.Center
@@ -424,7 +441,12 @@ fun SearchScreen(
                                                     contentScale = ContentScale.Crop
                                                 )
                                             } else {
-                                                Icon(Icons.Default.Person, contentDescription = null, tint = accentColor, modifier = Modifier.size(24.dp))
+                                                Icon(
+                                                    Icons.Default.Person,
+                                                    contentDescription = null,
+                                                    tint = accentColor,
+                                                    modifier = Modifier.size(26.dp)
+                                                )
                                             }
                                         }
 
@@ -435,17 +457,21 @@ fun SearchScreen(
                                                 Text(
                                                     text = userItem.username?.takeIf { it.isNotBlank() } ?: userItem.login,
                                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                                    color = TextPrimary
+                                                    color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 if (userItem.verified == true) {
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Icon(Icons.Default.CheckCircle, contentDescription = "Верифицирован", tint = accentColor, modifier = Modifier.size(16.dp))
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Image(
+                                                        painter = painterResource(R.drawable.ic_verified),
+                                                        contentDescription = "Верифицирован",
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
                                                 }
                                             }
                                             Text(
                                                 text = "@${userItem.login}",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = TextSecondary
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
 
@@ -454,9 +480,16 @@ fun SearchScreen(
                                                 modifier = Modifier
                                                     .size(10.dp)
                                                     .clip(CircleShape)
-                                                    .background(LeafGreen)
+                                                    .background(accentColor)
                                             )
+                                            Spacer(modifier = Modifier.width(8.dp))
                                         }
+
+                                        Image(
+                                            painter = painterResource(R.drawable.ic_next),
+                                            contentDescription = "Открыть профиль",
+                                            modifier = Modifier.size(18.dp)
+                                        )
                                     }
                                 }
                             }
@@ -472,10 +505,23 @@ fun SearchScreen(
                             .padding(top = 48.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(Icons.Default.MusicNote, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(48.dp))
+                        Icon(
+                            Icons.Default.MusicNote,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp)
+                        )
                         Spacer(modifier = Modifier.height(10.dp))
-                        Text("Ничего не найдено", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                        Text("Попробуйте изменить запрос или источник", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        Text(
+                            "Ничего не найдено",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            "Попробуйте изменить запрос или источник",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
 
@@ -499,12 +545,12 @@ fun SearchScreen(
                     }
                 }
 
-                // HISTORY & POPULAR QUERIES (when not searched yet)
+                // IDLE STATE: HISTORY, SEPARATED USER SEARCH PROMPT & GENRES
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 80.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(18.dp)
                     ) {
                         // Search History Section
                         if (searchHistory.isNotEmpty()) {
@@ -518,14 +564,18 @@ fun SearchScreen(
                                         Text(
                                             text = "История поиска",
                                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = TextSecondary
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         TextButton(onClick = { repository.clearSearchHistory() }) {
-                                            Text("Очистить", color = TextTertiary, fontSize = 12.sp)
+                                            Text(
+                                                "Очистить",
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 12.sp
+                                            )
                                         }
                                     }
 
-                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                         searchHistory.forEach { historyQuery ->
                                             Row(
                                                 modifier = Modifier
@@ -538,22 +588,106 @@ fun SearchScreen(
                                                     .padding(vertical = 8.dp, horizontal = 6.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Icon(Icons.Default.History, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(18.dp))
+                                                Icon(
+                                                    Icons.Default.History,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
                                                 Spacer(modifier = Modifier.width(12.dp))
                                                 Text(
                                                     text = historyQuery,
                                                     style = MaterialTheme.typography.bodyMedium,
-                                                    color = TextPrimary,
+                                                    color = MaterialTheme.colorScheme.onBackground,
                                                     modifier = Modifier.weight(1f)
                                                 )
                                                 IconButton(
                                                     onClick = { repository.removeSearchQuery(historyQuery) },
                                                     modifier = Modifier.size(24.dp)
                                                 ) {
-                                                    Icon(Icons.Default.Close, contentDescription = "Удалить", tint = TextTertiary, modifier = Modifier.size(16.dp))
+                                                    Icon(
+                                                        Icons.Default.Close,
+                                                        contentDescription = "Удалить",
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
                                                 }
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+
+                        // SEPARATED LEAF USER SEARCH SECTION (At bottom/clean card)
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .clickable {
+                                        searchQuery = "Leaf: "
+                                        isUserSearchMode = true
+                                    }
+                                    .testTag("leaf_user_search_banner"),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    accentColor.copy(alpha = 0.35f)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(46.dp)
+                                            .clip(CircleShape)
+                                            .background(accentColor.copy(alpha = 0.18f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PersonSearch,
+                                            contentDescription = null,
+                                            tint = accentColor,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(14.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Поиск профилей пользователей",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Введите «Leaf: логин» для поиска авторов и друзей",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = accentColor,
+                                        modifier = Modifier.clickable {
+                                            searchQuery = "Leaf: "
+                                            isUserSearchMode = true
+                                        }
+                                    ) {
+                                        Text(
+                                            text = "Leaf:",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                        )
                                     }
                                 }
                             }
@@ -565,7 +699,7 @@ fun SearchScreen(
                                 Text(
                                     text = "Популярные жанры",
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = TextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(bottom = 10.dp)
                                 )
                                 FlowRow(
@@ -575,7 +709,7 @@ fun SearchScreen(
                                     quickQueries.forEach { tag ->
                                         Surface(
                                             shape = RoundedCornerShape(12.dp),
-                                            color = ObsidianCard,
+                                            color = MaterialTheme.colorScheme.surfaceVariant,
                                             modifier = Modifier.clickable {
                                                 searchQuery = tag
                                                 executeSearch(tag)

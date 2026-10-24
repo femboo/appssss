@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -12,11 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,13 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.R
 import com.example.data.model.Track
-import com.example.ui.theme.HeartRed
-import com.example.ui.theme.LeafGreen
-import com.example.ui.theme.LeafGreenGlow
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.TextTertiary
 
 @Composable
 fun TrackItem(
@@ -55,26 +46,27 @@ fun TrackItem(
     modifier: Modifier = Modifier,
     trailingAction: (@Composable () -> Unit)? = null
 ) {
+    val activeColor = MaterialTheme.colorScheme.primary
     val backgroundColor by animateColorAsState(
-        targetValue = if (isCurrentTrack) LeafGreenGlow else Color.Transparent,
+        targetValue = if (isCurrentTrack) activeColor.copy(alpha = 0.16f) else Color.Transparent,
         label = "trackBgColor"
     )
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(backgroundColor)
             .clickable(onClick = onTrackClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 10.dp, vertical = 7.dp)
             .testTag("track_item_${track.id}"),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Artwork
         Box(
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .size(48.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
@@ -82,14 +74,13 @@ fun TrackItem(
                 AsyncImage(
                     model = track.artworkUrl,
                     contentDescription = track.displayTitle,
-                    modifier = Modifier.size(52.dp),
+                    modifier = Modifier.size(48.dp),
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
+                Image(
+                    painter = painterResource(R.drawable.ic_music_note),
                     contentDescription = null,
-                    tint = LeafGreen,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -107,7 +98,7 @@ fun TrackItem(
                     fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 15.sp
                 ),
-                color = if (isCurrentTrack) LeafGreen else TextPrimary,
+                color = if (isCurrentTrack) activeColor else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -121,37 +112,37 @@ fun TrackItem(
                 when {
                     srcLower.contains("soundcloud") || (!track.id.startsWith("yt_") && !track.id.startsWith("ym_") && !track.id.startsWith("up_")) -> {
                         Icon(
-                            painter = painterResource(com.example.R.drawable.ic_soundcloud),
+                            painter = painterResource(R.drawable.ic_soundcloud),
                             contentDescription = "SoundCloud",
                             tint = Color.Unspecified,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
                     srcLower.contains("yt") || srcLower.contains("youtube") -> {
                         Icon(
-                            painter = painterResource(com.example.R.drawable.ic_youtube),
+                            painter = painterResource(R.drawable.ic_youtube),
                             contentDescription = "YouTube Music",
                             tint = Color.Unspecified,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
                     srcLower.contains("ym") || srcLower.contains("yandex") -> {
                         Icon(
-                            painter = painterResource(com.example.R.drawable.ic_yandex),
+                            painter = painterResource(R.drawable.ic_yandex),
                             contentDescription = "Яндекс Музыка",
                             tint = Color.Unspecified,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
                 }
 
                 Text(
                     text = track.displayArtist,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
@@ -161,7 +152,7 @@ fun TrackItem(
                     Text(
                         text = " • ${track.formattedDuration}",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = TextTertiary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
                     )
                 }
             }
@@ -171,14 +162,13 @@ fun TrackItem(
         IconButton(
             onClick = onLikeClick,
             modifier = Modifier
-                .size(40.dp)
+                .size(38.dp)
                 .testTag("like_button_${track.id}")
         ) {
-            Icon(
-                imageVector = if (isLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+            Image(
+                painter = painterResource(if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart),
                 contentDescription = if (isLiked) "Удалить из любимых" else "Добавить в любимые",
-                tint = if (isLiked) HeartRed else TextSecondary,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
 
@@ -189,14 +179,13 @@ fun TrackItem(
             IconButton(
                 onClick = onAddToPlaylistClick,
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(38.dp)
                     .testTag("add_to_playlist_${track.id}")
             ) {
-                Icon(
-                    imageVector = Icons.Default.PlaylistAdd,
+                Image(
+                    painter = painterResource(R.drawable.ic_plus),
                     contentDescription = "Добавить в плейлист",
-                    tint = TextSecondary,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

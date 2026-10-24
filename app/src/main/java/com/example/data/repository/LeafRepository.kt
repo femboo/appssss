@@ -605,6 +605,74 @@ class LeafRepository private constructor(private val context: Context) {
         searchPrefs.edit().remove("queries").apply()
     }
 
+    suspend fun getLyrics(track: Track): Result<com.example.data.model.LyricsResponse> = withContext(Dispatchers.IO) {
+        try {
+            val title = track.title ?: ""
+            val artist = track.artist ?: ""
+            val durationSec = track.duration?.let { it / 1000 }
+            val resp = apiClient.getService().getLyrics(title, artist, durationSec)
+            if (resp.isSuccessful && resp.body() != null) {
+                Result.success(resp.body()!!)
+            } else {
+                Result.failure(Exception("Текст песни не найден"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUserProfile(login: String): Result<com.example.data.model.UserPublicProfile> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getUserProfile(login)
+            if (resp.isSuccessful && resp.body() != null) {
+                Result.success(resp.body()!!)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUserLibrary(login: String): Result<com.example.data.model.UserLibraryResponse> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getUserLibrary(login)
+            if (resp.isSuccessful && resp.body() != null) {
+                Result.success(resp.body()!!)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUserLikedTracks(login: String): Result<List<Track>> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getUserLikedTracks(login)
+            if (resp.isSuccessful && resp.body() != null) {
+                Result.success(resp.body()!!.tracks)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getUserPlaylistTracks(login: String, playlistId: String): Result<List<Track>> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getUserPlaylistTracks(login, playlistId)
+            if (resp.isSuccessful && resp.body() != null) {
+                Result.success(resp.body()!!.tracks)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun uploadAvatar(imageBytes: ByteArray, filename: String = "avatar.jpg"): Result<String> = withContext(Dispatchers.IO) {
         try {
             val reqBody = imageBytes.toRequestBody("image/*".toMediaTypeOrNull())

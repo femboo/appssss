@@ -141,7 +141,32 @@ interface LeafApiService {
     @GET("api/stream/{track_id}")
     suspend fun getStream(@Path("track_id") trackId: String): Response<StreamResponse>
 
+    // Lyrics
+    @GET("api/lyrics")
+    suspend fun getLyrics(
+        @Query("title") title: String,
+        @Query("artist") artist: String,
+        @Query("duration") duration: Long? = null
+    ): Response<com.example.data.model.LyricsResponse>
+
+    // Public User Profiles & Library
+    @GET("api/users/{login}/profile")
+    suspend fun getUserProfile(@Path("login") login: String): Response<com.example.data.model.UserPublicProfile>
+
+    @GET("api/users/{login}/library")
+    suspend fun getUserLibrary(@Path("login") login: String): Response<com.example.data.model.UserLibraryResponse>
+
+    @GET("api/users/{login}/liked")
+    suspend fun getUserLikedTracks(@Path("login") login: String): Response<com.example.data.model.LikedTracksResponse>
+
+    @GET("api/users/{login}/playlists/{id}/tracks")
+    suspend fun getUserPlaylistTracks(
+        @Path("login") login: String,
+        @Path("id") playlistId: String
+    ): Response<com.example.data.model.PlaylistTracksResponse>
+
     // Activity ping
     @POST("api/streak/ping")
     suspend fun pingStreak(@Body body: Map<String, Int> = mapOf("seconds" to 15)): Response<Any>
 }
+

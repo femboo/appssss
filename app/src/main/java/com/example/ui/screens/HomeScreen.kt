@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,12 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,24 +44,17 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.R
 import com.example.data.model.Track
 import com.example.data.repository.LeafRepository
 import com.example.player.AudioPlayerManager
 import com.example.ui.components.TrackItem
-import com.example.ui.theme.HeartRed
-import com.example.ui.theme.LeafGreen
-import com.example.ui.theme.LeafGreenDark
-import com.example.ui.theme.LeafTeal
-import com.example.ui.theme.ObsidianBackground
-import com.example.ui.theme.ObsidianCard
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
-import com.example.ui.theme.TextTertiary
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -87,7 +76,6 @@ fun HomeScreen(
     val likedIds by repository.likedTrackIds.collectAsState()
     val currentTrack by playerManager.currentTrack.collectAsState()
     val isPlaying by playerManager.isPlaying.collectAsState()
-    val isSyncing by repository.isSyncing.collectAsState()
 
     // Determine greeting based on device time
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -110,53 +98,34 @@ fun HomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(ObsidianBackground)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // Top Greeting Bar
+        // Top Greeting Bar (Clean & minimalist, without intrusive top-left box!)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp, bottom = 16.dp),
+                .padding(top = 8.dp, bottom = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_leaf),
-                        contentDescription = "Leaf",
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = greetingText,
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
-                        ),
-                        color = TextPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "Музыка для души",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
-                }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = greetingText,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Музыка для души",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             IconButton(
@@ -172,7 +141,7 @@ fun HomeScreen(
                 Icon(
                     imageVector = Icons.Default.Refresh,
                     contentDescription = "Обновить рекомендации",
-                    tint = TextSecondary
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -182,7 +151,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Liked songs quick card with PC likes banner asset
+            // Liked songs quick card
             Surface(
                 modifier = Modifier
                     .weight(1f)
@@ -198,12 +167,12 @@ fun HomeScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
+                            .size(44.dp)
                             .clip(RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        androidx.compose.foundation.Image(
-                            painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_likes_banner),
+                        Image(
+                            painter = painterResource(R.drawable.ic_likes_banner),
                             contentDescription = "Любимые",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
@@ -214,19 +183,19 @@ fun HomeScreen(
                         Text(
                             text = "Любимые",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
                         )
                         Text(
                             text = "${likedTracks.size} треков",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
 
-            // Echo quick card with PC wave asset
+            // Echo quick card
             Surface(
                 modifier = Modifier
                     .weight(1f)
@@ -253,13 +222,13 @@ fun HomeScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
+                            .size(44.dp)
                             .clip(RoundedCornerShape(10.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_wave),
+                            painter = painterResource(R.drawable.ic_wave),
                             contentDescription = "Эхо",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
@@ -270,26 +239,26 @@ fun HomeScreen(
                         Text(
                             text = "Эхо",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
                         )
                         Text(
                             text = "Бесконечный поток",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // "Эхо" Interactive Banner
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .clickable {
                     if (myWaveTracks.isNotEmpty()) {
                         playerManager.playTrack(myWaveTracks.first(), myWaveTracks)
@@ -302,7 +271,7 @@ fun HomeScreen(
                         }
                     }
                 },
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(20.dp),
             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
         ) {
             Box(
@@ -316,7 +285,7 @@ fun HomeScreen(
                             )
                         )
                     )
-                    .padding(20.dp)
+                    .padding(18.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -324,66 +293,66 @@ fun HomeScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .size(50.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_wave),
+                            painter = painterResource(R.drawable.ic_wave),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Эхо",
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 22.sp
+                                fontSize = 20.sp
                             ),
-                            color = TextPrimary
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Персональный поток треков под ваше настроение",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(46.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_play),
+                            painter = painterResource(R.drawable.ic_play),
                             contentDescription = "Запустить Эхо",
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(22.dp))
 
         // Recommendations Section
         Text(
             text = "Рекомендации",
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = "Собрано специально для вас",
             style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
@@ -408,29 +377,29 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp)),
-                color = ObsidianCard
+                color = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Text(
                     text = "Загрузка персональных рекомендаций...",
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextTertiary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(26.dp))
 
-        // "Популярное сейчас" (Local discover)
+        // "Популярно в сети"
         Text(
             text = "Популярно в сети",
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = "Треки, которые слушают прямо сейчас",
             style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
@@ -468,12 +437,15 @@ fun RecommendationCard(
     isPlaying: Boolean,
     onClick: () -> Unit
 ) {
+    val activeColor = MaterialTheme.colorScheme.primary
     Column(
         modifier = Modifier
-            .width(140.dp)
+            .width(136.dp)
             .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
-            .background(if (isCurrentTrack) Color(0x2200E676) else ObsidianCard)
+            .background(
+                if (isCurrentTrack) activeColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceVariant
+            )
             .padding(10.dp)
     ) {
         Box(
@@ -481,7 +453,7 @@ fun RecommendationCard(
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
             if (!track.artworkUrl.isNullOrBlank()) {
@@ -492,11 +464,10 @@ fun RecommendationCard(
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
+                Image(
+                    painter = painterResource(R.drawable.ic_music_note),
                     contentDescription = null,
-                    tint = LeafGreen,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(32.dp)
                 )
             }
 
@@ -510,8 +481,8 @@ fun RecommendationCard(
                     Icon(
                         imageVector = Icons.Default.GraphicEq,
                         contentDescription = null,
-                        tint = LeafGreen,
-                        modifier = Modifier.size(28.dp)
+                        tint = activeColor,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
@@ -522,14 +493,14 @@ fun RecommendationCard(
         Text(
             text = track.displayTitle,
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = if (isCurrentTrack) LeafGreen else TextPrimary,
+            color = if (isCurrentTrack) activeColor else MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             text = track.displayArtist,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
