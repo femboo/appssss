@@ -12,16 +12,15 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.QueueMusic
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -33,15 +32,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.ui.theme.ObsidianCard
 import com.example.data.model.Playlist
 import com.example.data.model.Track
 import com.example.data.repository.LeafRepository
@@ -58,9 +66,9 @@ import com.example.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
 
 enum class NavTab(val title: String) {
+    HOME("Главная"),
     SEARCH("Поиск"),
-    LIKED("Любимые"),
-    PLAYLISTS("Плейлисты"),
+    LIBRARY("Медиатека"),
     PROFILE("Профиль")
 }
 
@@ -84,7 +92,7 @@ fun MainScreen(
     val queue by playerManager.queue.collectAsState()
     val playerError by playerManager.errorMessage.collectAsState()
 
-    var selectedTab by remember { mutableStateOf(NavTab.SEARCH) }
+    var selectedTab by remember { mutableStateOf(NavTab.HOME) }
     var selectedPlaylistDetail by remember { mutableStateOf<Playlist?>(null) }
     var trackForPlaylistAdd by remember { mutableStateOf<Track?>(null) }
     var showCreatePlaylistFromAdd by remember { mutableStateOf(false) }
@@ -174,7 +182,7 @@ fun MainScreen(
         AuthScreen(
             repository = repository,
             onAuthSuccess = {
-                selectedTab = NavTab.SEARCH
+                selectedTab = NavTab.HOME
             }
         )
         return
@@ -212,108 +220,127 @@ fun MainScreen(
                     }
                 }
 
-                // Bottom Navigation
-                NavigationBar(
-                    containerColor = ObsidianSurface,
-                    contentColor = TextPrimary,
-                    tonalElevation = 8.dp,
-                    modifier = Modifier.testTag("main_bottom_nav")
+                // Floating rounded Bottom Navigation
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .clip(RoundedCornerShape(32.dp))
+                        .testTag("main_bottom_nav"),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shadowElevation = 10.dp,
+                    shape = RoundedCornerShape(32.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
-                    // Search
-                    NavigationBarItem(
-                        selected = selectedTab == NavTab.SEARCH && selectedPlaylistDetail == null,
-                        onClick = {
-                            selectedPlaylistDetail = null
-                            selectedTab = NavTab.SEARCH
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (selectedTab == NavTab.SEARCH) Icons.Default.Search else Icons.Outlined.Search,
-                                contentDescription = "Поиск"
-                            )
-                        },
-                        label = { Text("Поиск") },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = LeafGreen,
-                            indicatorColor = LeafGreen,
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary
-                        ),
-                        modifier = Modifier.testTag("nav_search")
-                    )
+                    NavigationBar(
+                        containerColor = Color.Transparent,
+                        contentColor = TextPrimary,
+                        tonalElevation = 0.dp,
+                        modifier = Modifier.height(60.dp)
+                    ) {
+                        val activeColor = MaterialTheme.colorScheme.primary
+                        val onPrimary = MaterialTheme.colorScheme.onPrimary
 
-                    // Liked
-                    NavigationBarItem(
-                        selected = selectedTab == NavTab.LIKED && selectedPlaylistDetail == null,
-                        onClick = {
-                            selectedPlaylistDetail = null
-                            selectedTab = NavTab.LIKED
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (selectedTab == NavTab.LIKED) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = "Любимые"
-                            )
-                        },
-                        label = { Text("Любимые") },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = LeafGreen,
-                            indicatorColor = LeafGreen,
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary
-                        ),
-                        modifier = Modifier.testTag("nav_liked")
-                    )
+                        // Home
+                        NavigationBarItem(
+                            selected = selectedTab == NavTab.HOME && selectedPlaylistDetail == null,
+                            onClick = {
+                                selectedPlaylistDetail = null
+                                selectedTab = NavTab.HOME
+                            },
+                            icon = {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_home),
+                                    contentDescription = "Главная",
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            },
+                            label = { Text("Главная", fontSize = 11.sp, fontWeight = if (selectedTab == NavTab.HOME) FontWeight.Bold else FontWeight.Normal) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = onPrimary,
+                                selectedTextColor = activeColor,
+                                indicatorColor = activeColor,
+                                unselectedIconColor = TextSecondary,
+                                unselectedTextColor = TextSecondary
+                            ),
+                            modifier = Modifier.testTag("nav_home")
+                        )
 
-                    // Playlists
-                    NavigationBarItem(
-                        selected = selectedTab == NavTab.PLAYLISTS || selectedPlaylistDetail != null,
-                        onClick = {
-                            selectedPlaylistDetail = null
-                            selectedTab = NavTab.PLAYLISTS
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (selectedTab == NavTab.PLAYLISTS) Icons.Default.QueueMusic else Icons.Outlined.QueueMusic,
-                                contentDescription = "Плейлисты"
-                            )
-                        },
-                        label = { Text("Плейлисты") },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = LeafGreen,
-                            indicatorColor = LeafGreen,
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary
-                        ),
-                        modifier = Modifier.testTag("nav_playlists")
-                    )
+                        // Search
+                        NavigationBarItem(
+                            selected = selectedTab == NavTab.SEARCH && selectedPlaylistDetail == null,
+                            onClick = {
+                                selectedPlaylistDetail = null
+                                selectedTab = NavTab.SEARCH
+                            },
+                            icon = {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_search),
+                                    contentDescription = "Поиск",
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            },
+                            label = { Text("Поиск", fontSize = 11.sp, fontWeight = if (selectedTab == NavTab.SEARCH) FontWeight.Bold else FontWeight.Normal) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = onPrimary,
+                                selectedTextColor = activeColor,
+                                indicatorColor = activeColor,
+                                unselectedIconColor = TextSecondary,
+                                unselectedTextColor = TextSecondary
+                            ),
+                            modifier = Modifier.testTag("nav_search")
+                        )
 
-                    // Profile
-                    NavigationBarItem(
-                        selected = selectedTab == NavTab.PROFILE && selectedPlaylistDetail == null,
-                        onClick = {
-                            selectedPlaylistDetail = null
-                            selectedTab = NavTab.PROFILE
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (selectedTab == NavTab.PROFILE) Icons.Default.Person else Icons.Outlined.Person,
-                                contentDescription = "Профиль"
-                            )
-                        },
-                        label = { Text("Профиль") },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.Black,
-                            selectedTextColor = LeafGreen,
-                            indicatorColor = LeafGreen,
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary
-                        ),
-                        modifier = Modifier.testTag("nav_profile")
-                    )
+                        // Library (Playlists + Likes unified)
+                        NavigationBarItem(
+                            selected = selectedTab == NavTab.LIBRARY || selectedPlaylistDetail != null,
+                            onClick = {
+                                selectedPlaylistDetail = null
+                                selectedTab = NavTab.LIBRARY
+                            },
+                            icon = {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_bookshelf),
+                                    contentDescription = "Медиатека",
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            },
+                            label = { Text("Медиатека", fontSize = 11.sp, fontWeight = if (selectedTab == NavTab.LIBRARY) FontWeight.Bold else FontWeight.Normal) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = onPrimary,
+                                selectedTextColor = activeColor,
+                                indicatorColor = activeColor,
+                                unselectedIconColor = TextSecondary,
+                                unselectedTextColor = TextSecondary
+                            ),
+                            modifier = Modifier.testTag("nav_library")
+                        )
+
+                        // Profile
+                        NavigationBarItem(
+                            selected = selectedTab == NavTab.PROFILE && selectedPlaylistDetail == null,
+                            onClick = {
+                                selectedPlaylistDetail = null
+                                selectedTab = NavTab.PROFILE
+                            },
+                            icon = {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_settings),
+                                    contentDescription = "Профиль",
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            },
+                            label = { Text("Профиль", fontSize = 11.sp, fontWeight = if (selectedTab == NavTab.PROFILE) FontWeight.Bold else FontWeight.Normal) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = onPrimary,
+                                selectedTextColor = activeColor,
+                                indicatorColor = activeColor,
+                                unselectedIconColor = TextSecondary,
+                                unselectedTextColor = TextSecondary
+                            ),
+                            modifier = Modifier.testTag("nav_profile")
+                        )
+                    }
                 }
             }
         },
@@ -334,19 +361,23 @@ fun MainScreen(
                 )
             } else {
                 when (selectedTab) {
+                    NavTab.HOME -> HomeScreen(
+                        repository = repository,
+                        playerManager = playerManager,
+                        onNavigateToLibrary = { selectedTab = NavTab.LIBRARY },
+                        onNavigateToLiked = { selectedTab = NavTab.LIBRARY },
+                        onAddToPlaylist = { track -> trackForPlaylistAdd = track }
+                    )
                     NavTab.SEARCH -> SearchScreen(
                         repository = repository,
                         playerManager = playerManager,
                         onAddToPlaylist = { track -> trackForPlaylistAdd = track }
                     )
-                    NavTab.LIKED -> LikedScreen(
+                    NavTab.LIBRARY -> LibraryScreen(
                         repository = repository,
                         playerManager = playerManager,
+                        onPlaylistClick = { pl -> selectedPlaylistDetail = pl },
                         onAddToPlaylist = { track -> trackForPlaylistAdd = track }
-                    )
-                    NavTab.PLAYLISTS -> PlaylistsScreen(
-                        repository = repository,
-                        onPlaylistClick = { pl -> selectedPlaylistDetail = pl }
                     )
                     NavTab.PROFILE -> ProfileScreen(
                         repository = repository,

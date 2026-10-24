@@ -46,9 +46,9 @@ fun ServerUrlDialog(
     var urlText by remember { mutableStateOf(currentUrl) }
 
     val presets = listOf(
+        "https://leafmusic.fun" to "Основной сервер (leafmusic.fun)",
         "http://10.0.2.2:5000" to "Android Emulator (Host)",
-        "http://127.0.0.1:5000" to "Localhost",
-        "http://192.168.1.100:5000" to "Локальная сеть"
+        "http://127.0.0.1:5000" to "Localhost"
     )
 
     AlertDialog(

@@ -43,8 +43,13 @@ data class UserProfile(
     @Json(name = "login") val login: String = "",
     @Json(name = "username") val username: String? = null,
     @Json(name = "avatar_url") val avatarUrl: String? = null,
+    @Json(name = "background_url") val backgroundUrl: String? = null,
     @Json(name = "theme") val theme: String? = null,
-    @Json(name = "verified") val verified: Boolean? = false
+    @Json(name = "theme_color") val themeColor: String? = null,
+    @Json(name = "verified") val verified: Boolean? = false,
+    @Json(name = "is_admin") val isAdmin: Boolean? = false,
+    @Json(name = "badges") val badges: List<String>? = emptyList(),
+    @Json(name = "subscription") val subscription: Map<String, Any>? = null
 )
 
 // Request bodies
@@ -81,6 +86,12 @@ data class CreatePlaylistRequest(
     @Json(name = "name") val name: String
 )
 
+@JsonClass(generateAdapter = true)
+data class UpdateThemeRequest(
+    @Json(name = "theme") val theme: String,
+    @Json(name = "theme_color") val themeColor: String? = null
+)
+
 // Response wrappers
 @JsonClass(generateAdapter = true)
 data class PendingVerificationResponse(
@@ -105,6 +116,12 @@ data class LikedTracksResponse(
 )
 
 @JsonClass(generateAdapter = true)
+data class TracksResponse(
+    @Json(name = "tracks") val tracks: List<Track> = emptyList(),
+    @Json(name = "country") val country: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class SearchResponse(
     @Json(name = "tracks") val tracks: List<Track> = emptyList(),
     @Json(name = "has_more") val hasMore: Boolean? = false,
@@ -122,4 +139,44 @@ data class StreamResponse(
 data class GenericOkResponse(
     @Json(name = "ok") val ok: Boolean? = true,
     @Json(name = "removed") val removed: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ThemeItem(
+    @Json(name = "id") val id: String? = null,
+    @Json(name = "name") val name: String,
+    @Json(name = "description") val description: String? = null,
+    @Json(name = "accent_color") val accentColor: String? = null,
+    @Json(name = "required_tier") val requiredTier: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ThemesResponse(
+    @Json(name = "themes") val themes: List<ThemeItem> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class AvatarResponse(
+    @Json(name = "avatar_url") val avatarUrl: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SuggestionsResponse(
+    @Json(name = "suggestions") val suggestions: List<String> = emptyList()
+)
+
+@JsonClass(generateAdapter = true)
+data class UserSearchItem(
+    @Json(name = "id") val id: Any? = null,
+    @Json(name = "login") val login: String = "",
+    @Json(name = "username") val username: String? = null,
+    @Json(name = "avatar_url") val avatarUrl: String? = null,
+    @Json(name = "verified") val verified: Boolean? = false,
+    @Json(name = "dev_badge") val devBadge: Boolean? = false,
+    @Json(name = "online") val online: Boolean? = false
+)
+
+@JsonClass(generateAdapter = true)
+data class UsersSearchResponse(
+    @Json(name = "users") val users: List<UserSearchItem> = emptyList()
 )

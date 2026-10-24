@@ -112,10 +112,10 @@ fun PlaylistDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack, modifier = Modifier.testTag("playlist_detail_back")) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_backarrow),
                     contentDescription = "Назад",
-                    tint = TextPrimary
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
@@ -148,15 +148,19 @@ fun PlaylistDetailScreen(
         if (tracks.isNotEmpty()) {
             Button(
                 onClick = { playerManager.playTrack(tracks.first(), tracks) },
-                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             ) {
-                Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = Color.Black)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Слушать плейлист", color = Color.Black, fontWeight = FontWeight.Bold)
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_play),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Слушать плейлист", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -254,11 +258,10 @@ fun PlaylistDetailScreen(
                                         },
                                         modifier = Modifier.size(40.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.DeleteOutline,
+                                        androidx.compose.foundation.Image(
+                                            painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_trash),
                                             contentDescription = "Удалить из плейлиста",
-                                            tint = TextTertiary,
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(18.dp)
                                         )
                                     }
                                 }

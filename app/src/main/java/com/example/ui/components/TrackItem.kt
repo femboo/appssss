@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -115,27 +116,36 @@ fun TrackItem(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(top = 2.dp)
             ) {
-                // Source badge if available
-                track.source?.let { src ->
-                    val badgeLabel = when (src.lowercase()) {
-                        "soundcloud" -> "SC"
-                        "ytmusic" -> "YT"
-                        "yandex_music" -> "YM"
-                        "upload" -> "Файл"
-                        else -> src.take(2).uppercase()
+                // Real source icon
+                val srcLower = (track.source ?: (if (track.id.startsWith("yt_")) "ytmusic" else if (track.id.startsWith("ym_")) "yandex_music" else if (track.id.startsWith("up_")) "upload" else "soundcloud")).lowercase()
+                when {
+                    srcLower.contains("soundcloud") || (!track.id.startsWith("yt_") && !track.id.startsWith("ym_") && !track.id.startsWith("up_")) -> {
+                        Icon(
+                            painter = painterResource(com.example.R.drawable.ic_soundcloud),
+                            contentDescription = "SoundCloud",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
                     }
-                    Text(
-                        text = badgeLabel,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = LeafGreen,
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(4.dp)
-                            )
-                            .padding(horizontal = 4.dp, vertical = 1.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    srcLower.contains("yt") || srcLower.contains("youtube") -> {
+                        Icon(
+                            painter = painterResource(com.example.R.drawable.ic_youtube),
+                            contentDescription = "YouTube Music",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                    }
+                    srcLower.contains("ym") || srcLower.contains("yandex") -> {
+                        Icon(
+                            painter = painterResource(com.example.R.drawable.ic_yandex),
+                            contentDescription = "Яндекс Музыка",
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                    }
                 }
 
                 Text(

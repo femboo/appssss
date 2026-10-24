@@ -8,9 +8,14 @@ import com.example.data.model.PendingVerificationResponse
 import com.example.data.model.Playlist
 import com.example.data.model.RegisterRequest
 import com.example.data.model.ResendRequest
+import com.example.data.model.ThemeItem
 import com.example.data.model.Track
+import com.example.data.model.UpdateThemeRequest
 import com.example.data.model.UserProfile
 import com.example.data.model.VerifyRequest
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +24,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+
+data class AppThemeState(
+    val isDark: Boolean = true,
+    val colorTheme: String = "green",
+    val accentHex: String = "#22C55E"
+)
 
 class LeafRepository private constructor(private val context: Context) {
     private val apiClient = ApiClient.getInstance(context)
@@ -39,6 +50,33 @@ class LeafRepository private constructor(private val context: Context) {
     private val _likedTrackIds = MutableStateFlow<Set<String>>(emptySet())
     val likedTrackIds: StateFlow<Set<String>> = _likedTrackIds.asStateFlow()
 
+    private val _recommendations = MutableStateFlow<List<Track>>(emptyList())
+    val recommendations: StateFlow<List<Track>> = _recommendations.asStateFlow()
+
+    private val _myWaveTracks = MutableStateFlow<List<Track>>(emptyList())
+    val myWaveTracks: StateFlow<List<Track>> = _myWaveTracks.asStateFlow()
+
+    private val _localDiscoverTracks = MutableStateFlow<List<Track>>(emptyList())
+    val localDiscoverTracks: StateFlow<List<Track>> = _localDiscoverTracks.asStateFlow()
+
+    private val _availableThemes = MutableStateFlow<List<ThemeItem>>(emptyList())
+    val availableThemes: StateFlow<List<ThemeItem>> = _availableThemes.asStateFlow()
+
+    private val themePrefs = context.getSharedPreferences("leaf_theme_prefs", Context.MODE_PRIVATE)
+    private val searchPrefs = context.getSharedPreferences("leaf_search_history", Context.MODE_PRIVATE)
+
+    private val _themeState = MutableStateFlow(
+        AppThemeState(
+            isDark = themePrefs.getBoolean("is_dark", true),
+            colorTheme = themePrefs.getString("color_theme", "green") ?: "green",
+            accentHex = themePrefs.getString("accent_hex", "#22C55E") ?: "#22C55E"
+        )
+    )
+    val themeState: StateFlow<AppThemeState> = _themeState.asStateFlow()
+
+    private val _searchHistory = MutableStateFlow<List<String>>(emptyList())
+    val searchHistory: StateFlow<List<String>> = _searchHistory.asStateFlow()
+
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
@@ -54,6 +92,7 @@ class LeafRepository private constructor(private val context: Context) {
     }
 
     init {
+        loadSearchHistoryInternal()
         scope.launch {
             checkAuthStatus()
         }
@@ -66,6 +105,9 @@ class LeafRepository private constructor(private val context: Context) {
                 val profile = response.body()!!
                 _currentUser.value = profile
                 _isLoggedIn.value = true
+                if (!profile.themeColor.isNullOrBlank()) {
+                    _themeState.value = _themeState.value.copy(accentHex = profile.themeColor)
+                }
                 syncLibrary()
                 true
             } else {
@@ -194,6 +236,10 @@ class LeafRepository private constructor(private val context: Context) {
         try {
             refreshLikedInternal()
             refreshPlaylistsInternal()
+            refreshRecommendations()
+            refreshMyWave()
+            refreshLocalDiscover()
+            refreshThemes()
         } catch (_: Exception) {
         } finally {
             _isSyncing.value = false
@@ -388,6 +434,197 @@ class LeafRepository private constructor(private val context: Context) {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // Recommendations & Home Feed
+    suspend fun refreshRecommendations(): Result<List<Track>> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getRecommendations()
+            if (resp.isSuccessful && resp.body() != null) {
+                val list = resp.body()!!.tracks
+                _recommendations.value = list
+                Result.success(list)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun refreshMyWave(): Result<List<Track>> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getMyWave(0)
+            if (resp.isSuccessful && resp.body() != null) {
+                val list = resp.body()!!.tracks
+                _myWaveTracks.value = list
+                Result.success(list)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun refreshLocalDiscover(country: String = "Russia"): Result<List<Track>> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getLocalDiscover(country)
+            if (resp.isSuccessful && resp.body() != null) {
+                val list = resp.body()!!.tracks
+                _localDiscoverTracks.value = list
+                Result.success(list)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // Themes & Profile Settings
+    suspend fun refreshThemes(): Result<List<ThemeItem>> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getThemes()
+            if (resp.isSuccessful && resp.body() != null) {
+                val list = resp.body()!!.themes
+                _availableThemes.value = list
+                Result.success(list)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun setThemeLocally(isDark: Boolean, colorTheme: String, accentHex: String? = null) {
+        val hex = accentHex ?: when (colorTheme.lowercase()) {
+            "green" -> "#22C55E"
+            "blue" -> "#3B82F6"
+            "white" -> "#F2F2F2"
+            "red" -> "#EF4444"
+            "purple" -> "#A855F7"
+            else -> "#22C55E"
+        }
+        _themeState.value = AppThemeState(isDark = isDark, colorTheme = colorTheme, accentHex = hex)
+        themePrefs.edit()
+            .putBoolean("is_dark", isDark)
+            .putString("color_theme", colorTheme)
+            .putString("accent_hex", hex)
+            .apply()
+    }
+
+    suspend fun updateTheme(themeName: String, accentColor: String? = null): Result<Unit> = withContext(Dispatchers.IO) {
+        val isDark = themeName != "light"
+        val detectedColorTheme = when (accentColor?.lowercase()) {
+            "#22c55e", "#00e676" -> "green"
+            "#3b82f6" -> "blue"
+            "#f2f2f2", "#ffffff" -> "white"
+            "#ef4444" -> "red"
+            "#a855f7" -> "purple"
+            else -> _themeState.value.colorTheme
+        }
+        val hex = accentColor ?: when (detectedColorTheme) {
+            "green" -> "#22C55E"
+            "blue" -> "#3B82F6"
+            "white" -> "#F2F2F2"
+            "red" -> "#EF4444"
+            "purple" -> "#A855F7"
+            else -> _themeState.value.accentHex
+        }
+
+        setThemeLocally(isDark, detectedColorTheme, hex)
+
+        try {
+            val resp = apiClient.getService().updateTheme(UpdateThemeRequest(if (isDark) "dark" else "light", hex))
+            if (resp.isSuccessful) {
+                _currentUser.value = _currentUser.value?.copy(theme = if (isDark) "dark" else "light", themeColor = hex)
+            }
+        } catch (_: Exception) {
+            // Local state is already updated
+        }
+        Result.success(Unit)
+    }
+
+    // Search Suggestions
+    suspend fun getSuggestions(query: String): Result<List<String>> = withContext(Dispatchers.IO) {
+        try {
+            val resp = apiClient.getService().getSuggestions(query)
+            if (resp.isSuccessful && resp.body() != null) {
+                Result.success(resp.body()!!.suggestions)
+            } else {
+                Result.success(emptyList())
+            }
+        } catch (_: Exception) {
+            Result.success(emptyList())
+        }
+    }
+
+    // Users Search for Leaf: prefix
+    suspend fun searchUsers(query: String): Result<List<com.example.data.model.UserSearchItem>> = withContext(Dispatchers.IO) {
+        try {
+            val cleanQuery = query.removePrefix("Leaf:").removePrefix("leaf:").trim()
+            val resp = apiClient.getService().searchUsers(cleanQuery)
+            if (resp.isSuccessful && resp.body() != null) {
+                Result.success(resp.body()!!.users)
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // Search History
+    private fun loadSearchHistoryInternal() {
+        val raw = searchPrefs.getString("queries", "") ?: ""
+        val list = if (raw.isBlank()) emptyList() else raw.split(";;;").filter { it.isNotBlank() }
+        _searchHistory.value = list
+    }
+
+    fun addSearchQuery(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return
+        val current = _searchHistory.value.toMutableList()
+        current.remove(trimmed)
+        current.add(0, trimmed)
+        val limited = current.take(15)
+        _searchHistory.value = limited
+        searchPrefs.edit().putString("queries", limited.joinToString(";;;")).apply()
+    }
+
+    fun removeSearchQuery(query: String) {
+        val current = _searchHistory.value.filter { it != query }
+        _searchHistory.value = current
+        searchPrefs.edit().putString("queries", current.joinToString(";;;")).apply()
+    }
+
+    fun clearSearchHistory() {
+        _searchHistory.value = emptyList()
+        searchPrefs.edit().remove("queries").apply()
+    }
+
+    suspend fun uploadAvatar(imageBytes: ByteArray, filename: String = "avatar.jpg"): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val reqBody = imageBytes.toRequestBody("image/*".toMediaTypeOrNull())
+            val part = MultipartBody.Part.createFormData("file", filename, reqBody)
+            val resp = apiClient.getService().uploadAvatar(part)
+            if (resp.isSuccessful && resp.body() != null) {
+                val avatarUrl = resp.body()!!.avatarUrl
+                _currentUser.value = _currentUser.value?.copy(avatarUrl = avatarUrl)
+                Result.success(avatarUrl ?: "")
+            } else {
+                Result.failure(Exception(parseError(resp.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun resolveAvatarUrl(rawUrl: String?): String? {
+        if (rawUrl.isNullOrBlank()) return null
+        return apiClient.resolveMediaUrl(rawUrl)
     }
 
     fun getBaseUrl(): String = apiClient.getBaseUrl()

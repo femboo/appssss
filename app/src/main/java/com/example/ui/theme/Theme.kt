@@ -1,39 +1,68 @@
 package com.example.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
-
-private val DarkColorScheme = darkColorScheme(
-    primary = LeafGreen,
-    onPrimary = Color.Black,
-    primaryContainer = Color(0xFF064E3B),
-    onPrimaryContainer = Color(0xFFA7F3D0),
-    secondary = LeafTeal,
-    onSecondary = Color.Black,
-    secondaryContainer = Color(0xFF134E4A),
-    onSecondaryContainer = Color(0xFF99F6E4),
-    tertiary = Color(0xFF38BDF8),
-    background = ObsidianBackground,
-    onBackground = TextPrimary,
-    surface = ObsidianSurface,
-    onSurface = TextPrimary,
-    surfaceVariant = ObsidianCard,
-    onSurfaceVariant = TextSecondary,
-    outline = ObsidianCardBorder,
-    error = ErrorRed,
-    onError = Color.Black
-)
 
 @Composable
 fun LeafMusicTheme(
-    darkTheme: Boolean = true, // Default to gorgeous dark player aesthetic
+    isDark: Boolean = true,
+    accentColor: Color = LeafGreen,
+    isWhiteTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val colorScheme = remember(isDark, accentColor, isWhiteTheme) {
+        val onPrimaryColor = if (isWhiteTheme) Color(0xFF111111) else Color.White
+        if (isDark) {
+            darkColorScheme(
+                primary = accentColor,
+                onPrimary = onPrimaryColor,
+                primaryContainer = accentColor.copy(alpha = 0.25f),
+                onPrimaryContainer = Color.White,
+                secondary = accentColor,
+                onSecondary = onPrimaryColor,
+                secondaryContainer = Color(0xFF18181B),
+                onSecondaryContainer = Color.White,
+                tertiary = Color(0xFF38BDF8),
+                background = DarkBackground,
+                onBackground = TextPrimaryDark,
+                surface = DarkSurface,
+                onSurface = TextPrimaryDark,
+                surfaceVariant = DarkCard,
+                onSurfaceVariant = TextSecondaryDark,
+                outline = DarkBorder,
+                error = ErrorRed,
+                onError = Color.White
+            )
+        } else {
+            lightColorScheme(
+                primary = accentColor,
+                onPrimary = onPrimaryColor,
+                primaryContainer = accentColor.copy(alpha = 0.25f),
+                onPrimaryContainer = Color.Black,
+                secondary = accentColor,
+                onSecondary = onPrimaryColor,
+                secondaryContainer = Color(0xFFE4E4E7),
+                onSecondaryContainer = Color.Black,
+                tertiary = Color(0xFF0284C7),
+                background = LightBackground,
+                onBackground = TextPrimaryLight,
+                surface = LightSurface,
+                onSurface = TextPrimaryLight,
+                surfaceVariant = LightCard,
+                onSurfaceVariant = TextSecondaryLight,
+                outline = LightBorder,
+                error = ErrorRed,
+                onError = Color.White
+            )
+        }
+    }
+
     MaterialTheme(
-        colorScheme = DarkColorScheme,
+        colorScheme = colorScheme,
         typography = Typography,
         content = content
     )

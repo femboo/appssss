@@ -66,13 +66,14 @@ fun MiniPlayer(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .testTag("mini_player"),
-        color = ObsidianCard,
+        color = MaterialTheme.colorScheme.surfaceVariant,
         shadowElevation = 8.dp,
-        tonalElevation = 4.dp
+        tonalElevation = 4.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column {
             // Progress Bar at the top
@@ -80,9 +81,9 @@ fun MiniPlayer(
                 progress = { progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(3.dp),
-                color = LeafGreen,
-                trackColor = Color(0x3300E676)
+                    .height(2.5.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
             )
 
             Row(
@@ -94,24 +95,23 @@ fun MiniPlayer(
                 // Artwork
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surface),
                     contentAlignment = Alignment.Center
                 ) {
                     if (!track.artworkUrl.isNullOrBlank()) {
                         AsyncImage(
                             model = track.artworkUrl,
                             contentDescription = track.displayTitle,
-                            modifier = Modifier.size(44.dp),
+                            modifier = Modifier.size(46.dp),
                             contentScale = ContentScale.Crop
                         )
                     } else {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_music_note),
                             contentDescription = null,
-                            tint = LeafGreen,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -144,13 +144,14 @@ fun MiniPlayer(
                 // Like button
                 IconButton(
                     onClick = onLikeClick,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Icon(
-                        imageVector = if (isLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(
+                            if (isLiked) com.example.R.drawable.ic_heart_filled else com.example.R.drawable.ic_heart
+                        ),
                         contentDescription = "Любимое",
-                        tint = if (isLiked) HeartRed else TextSecondary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                 }
 
@@ -158,21 +159,22 @@ fun MiniPlayer(
                 IconButton(
                     onClick = onPlayPauseClick,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(38.dp)
                         .testTag("mini_player_play_pause")
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = LeafGreen,
+                            modifier = Modifier.size(18.dp),
+                            color = MaterialTheme.colorScheme.primary,
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(
+                                if (isPlaying) com.example.R.drawable.ic_pause else com.example.R.drawable.ic_play
+                            ),
                             contentDescription = if (isPlaying) "Пауза" else "Играть",
-                            tint = TextPrimary,
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -180,13 +182,12 @@ fun MiniPlayer(
                 // Next
                 IconButton(
                     onClick = onNextClick,
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.SkipNext,
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_next),
                         contentDescription = "Следующий",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

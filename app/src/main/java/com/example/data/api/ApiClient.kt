@@ -37,7 +37,7 @@ class ApiClient private constructor(private val context: Context) {
     private var currentBaseUrl: String = ""
 
     companion object {
-        const val DEFAULT_BASE_URL = "http://10.0.2.2:5000/"
+        const val DEFAULT_BASE_URL = "https://leafmusic.fun/"
         private const val KEY_BASE_URL = "server_base_url"
 
         @Volatile
@@ -52,7 +52,10 @@ class ApiClient private constructor(private val context: Context) {
 
     fun getBaseUrl(): String {
         val stored = prefs.getString(KEY_BASE_URL, null)
-        val url = if (stored.isNullOrBlank()) DEFAULT_BASE_URL else stored
+        val url = if (stored.isNullOrBlank() || stored.contains("10.0.2.2")) {
+            prefs.edit().putString(KEY_BASE_URL, DEFAULT_BASE_URL).apply()
+            DEFAULT_BASE_URL
+        } else stored
         return if (url.endsWith("/")) url else "$url/"
     }
 

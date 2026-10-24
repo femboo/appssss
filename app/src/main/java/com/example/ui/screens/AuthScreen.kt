@@ -168,34 +168,42 @@ fun AuthScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // App Emblem
-            Box(
-                modifier = Modifier
-                    .size(76.dp)
-                    .clip(CircleShape)
-                    .background(LeafGreenGlow),
-                contentAlignment = Alignment.Center
+            // PC Web Player Brand Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = LeafGreen,
-                    modifier = Modifier.size(40.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(com.example.R.drawable.ic_leaf),
+                        contentDescription = "Leaf",
+                        modifier = Modifier.size(42.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = "Leaf",
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = com.example.ui.theme.SpaceGroteskFontFamily,
+                            fontSize = 32.sp
+                        ),
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "Музыка для души",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Leaf Music",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = TextPrimary
-            )
-            Text(
-                text = "Стриминг и синхронизация музыки",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
-            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

@@ -1,5 +1,6 @@
 package com.example.data.api
 
+import com.example.data.model.AvatarResponse
 import com.example.data.model.CreatePlaylistRequest
 import com.example.data.model.GenericOkResponse
 import com.example.data.model.LikedTracksResponse
@@ -12,14 +13,21 @@ import com.example.data.model.RegisterRequest
 import com.example.data.model.ResendRequest
 import com.example.data.model.SearchResponse
 import com.example.data.model.StreamResponse
+import com.example.data.model.ThemeItem
+import com.example.data.model.ThemesResponse
 import com.example.data.model.Track
+import com.example.data.model.TracksResponse
+import com.example.data.model.UpdateThemeRequest
 import com.example.data.model.UserProfile
 import com.example.data.model.VerifyRequest
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -49,6 +57,16 @@ interface LeafApiService {
 
     @POST("api/logout")
     suspend fun logout(): Response<GenericOkResponse>
+
+    // Recommendations & Discovery
+    @GET("api/recommendations")
+    suspend fun getRecommendations(): Response<TracksResponse>
+
+    @GET("api/my-wave")
+    suspend fun getMyWave(@Query("page") page: Int = 0): Response<TracksResponse>
+
+    @GET("api/discover/local")
+    suspend fun getLocalDiscover(@Query("country") country: String? = "Russia"): Response<TracksResponse>
 
     // Playlists
     @GET("api/playlists")
@@ -96,6 +114,28 @@ interface LeafApiService {
         @Query("q") query: String,
         @Query("source") source: String? = null
     ): Response<SearchResponse>
+
+    // Suggestions
+    @GET("api/suggest")
+    suspend fun getSuggestions(@Query("q") query: String): Response<com.example.data.model.SuggestionsResponse>
+
+    // Users Search
+    @GET("api/users/search")
+    suspend fun searchUsers(@Query("q") query: String): Response<com.example.data.model.UsersSearchResponse>
+
+    // Themes & Settings
+    @GET("api/themes")
+    suspend fun getThemes(): Response<ThemesResponse>
+
+    @POST("api/settings/theme")
+    suspend fun updateTheme(@Body req: UpdateThemeRequest): Response<GenericOkResponse>
+
+    @Multipart
+    @POST("api/account/avatar")
+    suspend fun uploadAvatar(@Part file: MultipartBody.Part): Response<AvatarResponse>
+
+    @DELETE("api/account/avatar")
+    suspend fun deleteAvatar(): Response<GenericOkResponse>
 
     // Stream
     @GET("api/stream/{track_id}")

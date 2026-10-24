@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,20 +18,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.QueueMusic
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -51,18 +40,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.R
 import com.example.data.model.Track
-import com.example.ui.theme.HeartRed
-import com.example.ui.theme.LeafGreen
-import com.example.ui.theme.LeafGreenDark
-import com.example.ui.theme.ObsidianBackground
-import com.example.ui.theme.ObsidianCard
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.theme.TextTertiary
@@ -105,7 +90,7 @@ fun FullPlayerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = ObsidianBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         dragHandle = null,
         modifier = Modifier.fillMaxSize()
     ) {
@@ -124,11 +109,10 @@ fun FullPlayerSheet(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
+                    Image(
+                        painter = painterResource(R.drawable.ic_backarrow),
                         contentDescription = "Скрыть плеер",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -142,11 +126,10 @@ fun FullPlayerSheet(
                 )
 
                 IconButton(onClick = onAddToPlaylistClick, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.PlaylistAdd,
+                    Image(
+                        painter = painterResource(R.drawable.ic_plus),
                         contentDescription = "В плейлист",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
@@ -160,7 +143,7 @@ fun FullPlayerSheet(
                     .aspectRatio(1f)
                     .shadow(elevation = 20.dp, shape = RoundedCornerShape(24.dp))
                     .clip(RoundedCornerShape(24.dp))
-                    .background(ObsidianCard),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 if (!track.artworkUrl.isNullOrBlank()) {
@@ -171,11 +154,10 @@ fun FullPlayerSheet(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(
-                        imageVector = Icons.Default.MusicNote,
+                    Image(
+                        painter = painterResource(R.drawable.ic_music_note),
                         contentDescription = null,
-                        tint = LeafGreen,
-                        modifier = Modifier.size(96.dp)
+                        modifier = Modifier.size(80.dp)
                     )
                 }
             }
@@ -214,10 +196,11 @@ fun FullPlayerSheet(
                         .size(48.dp)
                         .testTag("full_player_like_button")
                 ) {
-                    Icon(
-                        imageVector = if (isLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                    Image(
+                        painter = painterResource(
+                            if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart
+                        ),
                         contentDescription = "Любимое",
-                        tint = if (isLiked) HeartRed else TextSecondary,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -239,8 +222,8 @@ fun FullPlayerSheet(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
-                    thumbColor = LeafGreen,
-                    activeTrackColor = LeafGreen,
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
                     inactiveTrackColor = Color(0x33FFFFFF)
                 )
             )
@@ -279,21 +262,20 @@ fun FullPlayerSheet(
                     onClick = onPreviousClick,
                     modifier = Modifier.size(56.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.SkipPrevious,
+                    Image(
+                        painter = painterResource(R.drawable.ic_previous),
                         contentDescription = "Предыдущий",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
 
                 // Play / Pause big button
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(70.dp)
                         .shadow(12.dp, CircleShape)
                         .clip(CircleShape)
-                        .background(LeafGreen),
+                        .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
                     IconButton(
@@ -304,16 +286,17 @@ fun FullPlayerSheet(
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(32.dp),
-                                color = Color.Black,
+                                modifier = Modifier.size(28.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 strokeWidth = 3.dp
                             )
                         } else {
-                            Icon(
-                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            Image(
+                                painter = painterResource(
+                                    if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+                                ),
                                 contentDescription = if (isPlaying) "Пауза" else "Играть",
-                                tint = Color.Black,
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                     }
@@ -324,11 +307,10 @@ fun FullPlayerSheet(
                     onClick = onNextClick,
                     modifier = Modifier.size(56.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.SkipNext,
+                    Image(
+                        painter = painterResource(R.drawable.ic_next),
                         contentDescription = "Следующий",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }
@@ -338,26 +320,20 @@ fun FullPlayerSheet(
             // Queue count indicator
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(ObsidianCard)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.QueueMusic,
+                Image(
+                    painter = painterResource(R.drawable.ic_bookshelf),
                     contentDescription = null,
-                    tint = LeafGreen,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(16.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "В очереди: $queueCount треков",
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                    color = TextSecondary
+                    text = if (queueCount > 1) "В очереди: $queueCount треков" else "Одиночный трек",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextTertiary
                 )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
