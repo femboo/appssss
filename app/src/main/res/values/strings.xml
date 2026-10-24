@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Leaf Music</string>
+    <string name="nav_search">Поиск</string>
+    <string name="nav_liked">Любимые</string>
+    <string name="nav_playlists">Плейлисты</string>
+    <string name="nav_profile">Профиль</string>
+</resources>

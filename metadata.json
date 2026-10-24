@@ -1,0 +1,6 @@
+{
+  "name": "Leaf Music",
+  "description": "Музыкальный плеер с синхронизацией плейлистов, поиском треков, избранным и авторизацией Leaf Web",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
