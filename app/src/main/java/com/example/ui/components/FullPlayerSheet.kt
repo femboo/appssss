@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.CircularProgressIndicator
@@ -179,6 +180,7 @@ fun FullPlayerSheet(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .ambientGlow(MaterialTheme.colorScheme.primary, 0.26f)
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 12.dp),
@@ -191,9 +193,10 @@ fun FullPlayerSheet(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconButton(onClick = onDismiss, modifier = Modifier.size(44.dp)) {
-                    Image(
+                    Icon(
                         painter = painterResource(R.drawable.ic_backarrow),
                         contentDescription = "Скрыть плеер",
+                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -231,10 +234,11 @@ fun FullPlayerSheet(
 
                     // Add to playlist button
                     IconButton(onClick = onAddToPlaylistClick, modifier = Modifier.size(44.dp)) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_plus),
+                        Icon(
+                            imageVector = Icons.Default.Add,
                             contentDescription = "В плейлист",
-                            modifier = Modifier.size(22.dp)
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -259,10 +263,10 @@ fun FullPlayerSheet(
                         // Artwork View
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.85f)
+                                .fillMaxWidth(0.92f)
                                 .aspectRatio(1f)
-                                .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp))
-                                .clip(RoundedCornerShape(24.dp))
+                                .shadow(elevation = 24.dp, shape = RoundedCornerShape(18.dp))
+                                .clip(RoundedCornerShape(18.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
@@ -418,7 +422,7 @@ fun FullPlayerSheet(
                         text = track.displayTitle,
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize = 24.sp
                         ),
                         color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 1,
@@ -440,11 +444,12 @@ fun FullPlayerSheet(
                         .size(48.dp)
                         .testTag("full_player_like_button")
                 ) {
-                    Image(
+                    Icon(
                         painter = painterResource(
                             if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart
                         ),
                         contentDescription = "Любимое",
+                        tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(26.dp)
                     )
                 }
@@ -466,9 +471,9 @@ fun FullPlayerSheet(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                    thumbColor = MaterialTheme.colorScheme.onSurface,
+                    activeTrackColor = MaterialTheme.colorScheme.onSurface,
+                    inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)
                 )
             )
 
@@ -504,22 +509,28 @@ fun FullPlayerSheet(
                 // Previous
                 IconButton(
                     onClick = onPreviousClick,
-                    modifier = Modifier.size(54.dp)
+                    modifier = Modifier.size(58.dp)
                 ) {
-                    Image(
+                    Icon(
                         painter = painterResource(R.drawable.ic_previous),
                         contentDescription = "Предыдущий",
-                        modifier = Modifier.size(30.dp)
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(32.dp)
                     )
                 }
 
-                // Play / Pause big button
+                // Play / Pause big round inverted button (Yandex-style) with soft accent glow
                 Box(
                     modifier = Modifier
-                        .size(68.dp)
-                        .shadow(10.dp, CircleShape)
+                        .size(76.dp)
+                        .shadow(
+                            16.dp,
+                            CircleShape,
+                            ambientColor = MaterialTheme.colorScheme.primary,
+                            spotColor = MaterialTheme.colorScheme.primary
+                        )
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(MaterialTheme.colorScheme.onSurface),
                     contentAlignment = Alignment.Center
                 ) {
                     IconButton(
@@ -530,17 +541,18 @@ fun FullPlayerSheet(
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(26.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(28.dp),
+                                color = MaterialTheme.colorScheme.background,
                                 strokeWidth = 3.dp
                             )
                         } else {
-                            Image(
+                            Icon(
                                 painter = painterResource(
                                     if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
                                 ),
                                 contentDescription = if (isPlaying) "Пауза" else "Играть",
-                                modifier = Modifier.size(30.dp)
+                                tint = MaterialTheme.colorScheme.background,
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                     }
@@ -549,12 +561,13 @@ fun FullPlayerSheet(
                 // Next
                 IconButton(
                     onClick = onNextClick,
-                    modifier = Modifier.size(54.dp)
+                    modifier = Modifier.size(58.dp)
                 ) {
-                    Image(
+                    Icon(
                         painter = painterResource(R.drawable.ic_next),
                         contentDescription = "Следующий",
-                        modifier = Modifier.size(30.dp)
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }

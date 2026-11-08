@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -67,6 +68,10 @@ import com.example.data.model.Track
 import com.example.data.repository.LeafRepository
 import com.example.player.AudioPlayerManager
 import com.example.ui.components.CreatePlaylistDialog
+import com.example.ui.components.GradientCover
+import com.example.ui.components.LeafChip
+import com.example.ui.components.ScreenTitle
+import com.example.ui.components.ambientGlow
 import com.example.ui.components.TrackItem
 import kotlinx.coroutines.launch
 
@@ -152,6 +157,7 @@ fun LibraryScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .ambientGlow(accentColor)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Header
@@ -163,11 +169,7 @@ fun LibraryScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(
-                    text = "Медиатека",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                ScreenTitle(text = "Медиатека")
                 Text(
                     text = "${playlists.size} плейлистов • ${likedTracks.size} любимых",
                     style = MaterialTheme.typography.bodySmall,
@@ -216,24 +218,10 @@ fun LibraryScreen(
         ) {
             val filterLabels = listOf("Все", "Плейлисты", "Любимые")
             filterLabels.forEachIndexed { index, label ->
-                val isSelected = selectedFilterIndex == index
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { selectedFilterIndex = index },
-                    label = {
-                        Text(
-                            text = label,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 13.sp
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = accentColor,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = null
+                LeafChip(
+                    label = label,
+                    selected = selectedFilterIndex == index,
+                    onClick = { selectedFilterIndex = index }
                 )
             }
         }
@@ -246,72 +234,74 @@ fun LibraryScreen(
             // "Любимые треки" banner card (shown when "Все" or "Любимые" is selected)
             if (selectedFilterIndex == 0 || selectedFilterIndex == 2) {
                 item {
-                    Card(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(18.dp))
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        accentColor.copy(alpha = 0.28f),
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                )
+                            )
                             .clickable {
                                 if (likedTracks.isNotEmpty()) {
                                     playerManager.playTrack(likedTracks.first(), likedTracks)
                                 }
                             }
+                            .padding(10.dp)
                             .testTag("library_liked_banner"),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(10.dp)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
+                            Image(
+                                painter = painterResource(R.drawable.ic_likes_banner),
+                                contentDescription = "Любимые треки",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Любимые треки",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "${likedTracks.size} треков",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (likedTracks.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    playerManager.playTrack(likedTracks.first(), likedTracks)
+                                },
                                 modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .background(accentColor)
+                                    .testTag("library_play_liked")
                             ) {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_likes_banner),
-                                    contentDescription = "Любимые треки",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_play),
+                                    contentDescription = "Играть всё",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(20.dp)
                                 )
-                            }
-
-                            Spacer(modifier = Modifier.width(14.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Любимые треки",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "${likedTracks.size} треков",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            if (likedTracks.isNotEmpty()) {
-                                IconButton(
-                                    onClick = {
-                                        playerManager.playTrack(likedTracks.first(), likedTracks)
-                                    },
-                                    modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(CircleShape)
-                                        .background(accentColor)
-                                        .testTag("library_play_liked")
-                                ) {
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_play),
-                                        contentDescription = "Играть всё",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
                             }
                         }
                     }
@@ -369,63 +359,55 @@ fun LibraryScreen(
                     }
                 } else {
                     items(playlists, key = { "pl_${it.id}" }) { playlist ->
-                        Card(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
+                                .clip(RoundedCornerShape(12.dp))
                                 .clickable { onPlaylistClick(playlist) }
+                                .padding(start = 6.dp, top = 6.dp, bottom = 6.dp, end = 2.dp)
                                 .testTag("library_playlist_${playlist.id}"),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                            shape = RoundedCornerShape(14.dp)
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            GradientCover(
+                                modifier = Modifier.size(56.dp),
+                                corner = 10.dp
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(accentColor.copy(alpha = 0.16f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_bookshelf),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_bookshelf),
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
 
-                                Spacer(modifier = Modifier.width(14.dp))
+                            Spacer(modifier = Modifier.width(14.dp))
 
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = playlist.name,
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "${playlist.trackCount} треков • Плейлист",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = playlist.name,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "${playlist.trackCount} треков • Плейлист",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                                IconButton(
-                                    onClick = { playlistToDelete = playlist },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_trash),
-                                        contentDescription = "Удалить плейлист",
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
+                            IconButton(
+                                onClick = { playlistToDelete = playlist },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_trash),
+                                    contentDescription = "Удалить плейлист",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
                         }
                     }

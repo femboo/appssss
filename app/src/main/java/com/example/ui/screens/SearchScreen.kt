@@ -57,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
@@ -73,7 +74,10 @@ import com.example.data.model.Track
 import com.example.data.model.UserSearchItem
 import com.example.data.repository.LeafRepository
 import com.example.player.AudioPlayerManager
+import com.example.ui.components.LeafChip
+import com.example.ui.components.ScreenTitle
 import com.example.ui.components.TrackItem
+import com.example.ui.components.ambientGlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -181,14 +185,13 @@ fun SearchScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .ambientGlow(accentColor)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Title
-        Text(
+        ScreenTitle(
             text = "Поиск",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
+            modifier = Modifier.padding(top = 8.dp, bottom = 14.dp)
         )
 
         // Search text input
@@ -209,7 +212,7 @@ fun SearchScreen(
                 Icon(
                     imageVector = if (isUserSearchMode) Icons.Default.PersonSearch else Icons.Default.Search,
                     contentDescription = null,
-                    tint = accentColor
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             trailingIcon = {
@@ -230,10 +233,10 @@ fun SearchScreen(
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = accentColor,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedBorderColor = accentColor.copy(alpha = 0.7f),
+                unfocusedBorderColor = Color.Transparent,
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -303,7 +306,8 @@ fun SearchScreen(
                 val (label, iconRes) = pair
                 val isSelected = selectedSource == srcKey && !isUserSearchMode
 
-                FilterChip(
+                LeafChip(
+                    label = label,
                     selected = isSelected,
                     onClick = {
                         isUserSearchMode = false
@@ -321,21 +325,7 @@ fun SearchScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                         }
-                    } else null,
-                    label = {
-                        Text(
-                            text = label,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = accentColor,
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = null
+                    } else null
                 )
             }
         }
@@ -698,29 +688,54 @@ fun SearchScreen(
                             Column {
                                 Text(
                                     text = "Популярные жанры",
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 21.sp),
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.padding(bottom = 10.dp)
                                 )
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    quickQueries.forEach { tag ->
-                                        Surface(
-                                            shape = RoundedCornerShape(12.dp),
-                                            color = MaterialTheme.colorScheme.surfaceVariant,
-                                            modifier = Modifier.clickable {
-                                                searchQuery = tag
-                                                executeSearch(tag)
+                                val tileColors = listOf(
+                                    Color(0xFF7C3AED), Color(0xFF0EA5E9), Color(0xFFEC4899),
+                                    Color(0xFFF59E0B), Color(0xFFEF4444), Color(0xFF14B8A6)
+                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    quickQueries.chunked(2).forEachIndexed { rowIndex, rowTags ->
+                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            rowTags.forEachIndexed { colIndex, tag ->
+                                                val tint = tileColors[(rowIndex * 2 + colIndex) % tileColors.size]
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(84.dp)
+                                                        .clip(RoundedCornerShape(16.dp))
+                                                        .background(
+                                                            Brush.linearGradient(
+                                                                listOf(tint, tint.copy(alpha = 0.55f))
+                                                            )
+                                                        )
+                                                        .clickable {
+                                                            searchQuery = tag
+                                                            executeSearch(tag)
+                                                        }
+                                                        .padding(14.dp)
+                                                ) {
+                                                    Text(
+                                                        text = tag.replaceFirstChar { it.uppercase() },
+                                                        style = MaterialTheme.typography.titleMedium.copy(
+                                                            fontWeight = FontWeight.Bold
+                                                        ),
+                                                        color = Color.White,
+                                                        modifier = Modifier.align(Alignment.TopStart)
+                                                    )
+                                                    Icon(
+                                                        imageVector = Icons.Default.MusicNote,
+                                                        contentDescription = null,
+                                                        tint = Color.White.copy(alpha = 0.35f),
+                                                        modifier = Modifier
+                                                            .align(Alignment.BottomEnd)
+                                                            .size(34.dp)
+                                                    )
+                                                }
                                             }
-                                        ) {
-                                            Text(
-                                                text = "# $tag",
-                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                                color = accentColor,
-                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                                            )
+                                            if (rowTags.size == 1) Spacer(modifier = Modifier.weight(1f))
                                         }
                                     }
                                 }

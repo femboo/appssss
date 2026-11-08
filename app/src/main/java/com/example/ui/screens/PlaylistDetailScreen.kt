@@ -44,12 +44,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.model.Playlist
 import com.example.data.model.Track
 import com.example.data.repository.LeafRepository
 import com.example.player.AudioPlayerManager
+import com.example.ui.components.GlowPlayButton
+import com.example.ui.components.GradientCover
 import com.example.ui.components.TrackItem
+import com.example.ui.components.ambientGlow
 import kotlinx.coroutines.launch
 
 @Composable
@@ -95,6 +101,7 @@ fun PlaylistDetailScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .ambientGlow(accentColor)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Top Bar
@@ -105,9 +112,10 @@ fun PlaylistDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack, modifier = Modifier.testTag("playlist_detail_back")) {
-                Image(
+                Icon(
                     painter = painterResource(R.drawable.ic_backarrow),
                     contentDescription = "Назад",
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -137,23 +145,51 @@ fun PlaylistDetailScreen(
             }
         }
 
-        // Play All Button
+        // Hero: gradient cover + big round play button (Yandex-style)
         if (tracks.isNotEmpty()) {
-            Button(
-                onClick = { playerManager.playTrack(tracks.first(), tracks) },
-                colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                shape = RoundedCornerShape(14.dp),
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_play),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Слушать плейлист", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                GradientCover(
+                    modifier = Modifier.size(96.dp),
+                    corner = 16.dp
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_bookshelf),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Плейлист",
+                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.5.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${tracks.size} треков",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                GlowPlayButton(
+                    modifier = Modifier
+                        .clickable { playerManager.playTrack(tracks.first(), tracks) }
+                        .testTag("playlist_play_all"),
+                    size = 60.dp
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_play),
+                        contentDescription = "Слушать плейлист",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
             }
         }
 
@@ -222,7 +258,7 @@ fun PlaylistDetailScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 80.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         items(tracks, key = { it.id }) { track ->
                             TrackItem(
@@ -251,9 +287,10 @@ fun PlaylistDetailScreen(
                                         },
                                         modifier = Modifier.size(38.dp)
                                     ) {
-                                        Image(
+                                        Icon(
                                             painter = painterResource(R.drawable.ic_trash),
                                             contentDescription = "Удалить из плейлиста",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }

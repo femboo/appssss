@@ -1,6 +1,6 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,12 +25,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,8 +37,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -54,7 +53,11 @@ import com.example.R
 import com.example.data.model.Track
 import com.example.data.repository.LeafRepository
 import com.example.player.AudioPlayerManager
+import com.example.ui.components.GlowPlayButton
+import com.example.ui.components.SectionHeader
 import com.example.ui.components.TrackItem
+import com.example.ui.components.ambientGlow
+import com.example.ui.theme.SpaceGroteskFontFamily
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -73,6 +76,7 @@ fun HomeScreen(
     val myWaveTracks by repository.myWaveTracks.collectAsState()
     val localDiscoverTracks by repository.localDiscoverTracks.collectAsState()
     val likedTracks by repository.likedTracks.collectAsState()
+    val playlists by repository.playlists.collectAsState()
     val likedIds by repository.likedTrackIds.collectAsState()
     val currentTrack by playerManager.currentTrack.collectAsState()
     val isPlaying by playerManager.isPlaying.collectAsState()
@@ -87,7 +91,7 @@ fun HomeScreen(
     }
 
     val displayName = user?.username?.takeIf { it.isNotBlank() } ?: user?.login ?: ""
-    val greetingText = if (displayName.isNotBlank()) "$greeting, $displayName!" else "$greeting!"
+    val greetingText = if (displayName.isNotBlank()) "$greeting, $displayName" else greeting
 
     LaunchedEffect(Unit) {
         if (recommendations.isEmpty()) repository.refreshRecommendations()
@@ -95,36 +99,55 @@ fun HomeScreen(
         if (localDiscoverTracks.isEmpty()) repository.refreshLocalDiscover()
     }
 
+    fun startWave() {
+        if (myWaveTracks.isNotEmpty()) {
+            playerManager.playTrack(myWaveTracks.first(), myWaveTracks)
+        } else {
+            scope.launch {
+                val res = repository.refreshMyWave()
+                res.getOrNull()?.firstOrNull()?.let { track ->
+                    playerManager.playTrack(track, res.getOrNull())
+                }
+            }
+        }
+    }
+
+    val accent = MaterialTheme.colorScheme.primary
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .ambientGlow(accent)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // Top Greeting Bar (Clean & minimalist, without intrusive top-left box!)
+        // Header: big title + greeting, refresh on the right
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 8.dp, bottom = 14.dp),
+                .padding(top = 8.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = greetingText,
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Музыка для души",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Главное",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontFamily = SpaceGroteskFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 30.sp,
+                        lineHeight = 36.sp,
+                        letterSpacing = (-0.4).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -146,214 +169,59 @@ fun HomeScreen(
             }
         }
 
-        // Quick Jump Tiles (2x2 Grid)
+        // "Эхо" hero — the equivalent of Yandex's "Моя волна": big gradient card + round play button
+        EchoHero(onClick = { startWave() })
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Quick access tiles (Любимые / Медиатека)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Liked songs quick card
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .clickable { onNavigateToLiked() },
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.ic_likes_banner),
-                            contentDescription = "Любимые",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Любимые",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1
-                        )
-                        Text(
-                            text = "${likedTracks.size} треков",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+            QuickTile(
+                modifier = Modifier.weight(1f),
+                title = "Любимые",
+                subtitle = "${likedTracks.size} треков",
+                onClick = onNavigateToLiked,
+                cover = {
+                    androidx.compose.foundation.Image(
+                        painter = painterResource(R.drawable.ic_likes_banner),
+                        contentDescription = "Любимые",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
                 }
-            }
-
-            // Echo quick card
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .clickable {
-                        if (myWaveTracks.isNotEmpty()) {
-                            playerManager.playTrack(myWaveTracks.first(), myWaveTracks)
-                        } else {
-                            scope.launch {
-                                val res = repository.refreshMyWave()
-                                res.getOrNull()?.firstOrNull()?.let { track ->
-                                    playerManager.playTrack(track, res.getOrNull())
-                                }
-                            }
-                        }
-                    },
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            )
+            QuickTile(
+                modifier = Modifier.weight(1f),
+                title = "Медиатека",
+                subtitle = "${playlists.size} плейлистов",
+                onClick = onNavigateToLibrary,
+                cover = {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            .fillMaxSize()
+                            .background(accent.copy(alpha = 0.18f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_wave),
-                            contentDescription = "Эхо",
-                            tint = MaterialTheme.colorScheme.primary,
+                            painter = painterResource(R.drawable.ic_bookshelf),
+                            contentDescription = null,
+                            tint = accent,
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Эхо",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1
-                        )
-                        Text(
-                            text = "Бесконечный поток",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
-            }
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
-        // "Эхо" Interactive Banner
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .clickable {
-                    if (myWaveTracks.isNotEmpty()) {
-                        playerManager.playTrack(myWaveTracks.first(), myWaveTracks)
-                    } else {
-                        scope.launch {
-                            val res = repository.refreshMyWave()
-                            res.getOrNull()?.firstOrNull()?.let { track ->
-                                playerManager.playTrack(track, res.getOrNull())
-                            }
-                        }
-                    }
-                },
-            shape = RoundedCornerShape(20.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
-                                MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        )
-                    )
-                    .padding(18.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_wave),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Эхо",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 20.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Персональный поток треков под ваше настроение",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_play),
-                            contentDescription = "Запустить Эхо",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(22.dp))
-
-        // Recommendations Section
-        Text(
-            text = "Рекомендации",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = "Собрано специально для вас",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp)
+        // Recommendations shelf
+        SectionHeader(
+            title = "Рекомендации",
+            subtitle = "Собрано специально для вас"
         )
 
         if (recommendations.isNotEmpty()) {
@@ -373,39 +241,32 @@ fun HomeScreen(
                 }
             }
         } else {
-            Surface(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp)),
-                color = MaterialTheme.colorScheme.surfaceVariant
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(16.dp)
             ) {
                 Text(
                     text = "Загрузка персональных рекомендаций...",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(16.dp)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(26.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         // "Популярно в сети"
-        Text(
-            text = "Популярно в сети",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = "Треки, которые слушают прямо сейчас",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp)
+        SectionHeader(
+            title = "Популярно в сети",
+            subtitle = "Треки, которые слушают прямо сейчас"
         )
 
         val feedTracks = if (localDiscoverTracks.isNotEmpty()) localDiscoverTracks else myWaveTracks
         if (feedTracks.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 feedTracks.take(8).forEach { track ->
                     TrackItem(
                         track = track,
@@ -430,6 +291,125 @@ fun HomeScreen(
     }
 }
 
+/** Big "Моя волна"-like banner with concentric rings and a glowing play button. */
+@Composable
+private fun EchoHero(onClick: () -> Unit) {
+    val accent = MaterialTheme.colorScheme.primary
+    val surface = MaterialTheme.colorScheme.surfaceVariant
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(176.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(accent.copy(alpha = 0.95f), accent.copy(alpha = 0.45f), surface)
+                )
+            )
+            .clickable(onClick = onClick)
+            .testTag("home_echo_hero")
+    ) {
+        // Decorative "sound wave" rings on the right side
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val center = Offset(size.width * 0.86f, size.height * 0.5f)
+            for (i in 1..5) {
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.16f - i * 0.022f),
+                    radius = size.height * 0.22f * i,
+                    center = center,
+                    style = Stroke(width = 2.dp.toPx())
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 20.dp, end = 110.dp)
+        ) {
+            Text(
+                text = "ЭХО",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    letterSpacing = 2.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = Color.White.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Бесконечный поток",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontFamily = SpaceGroteskFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 26.sp,
+                    lineHeight = 30.sp
+                ),
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Персональный поток треков под ваше настроение",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.78f),
+                maxLines = 2
+            )
+        }
+
+        GlowPlayButton(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 24.dp),
+            size = 64.dp
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_play),
+                contentDescription = "Запустить Эхо",
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+/** Compact tile: square cover on the left, two lines of text — like Yandex "Мне нравится". */
+@Composable
+private fun QuickTile(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    cover: @Composable () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.size(56.dp)) { cover() }
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** Flat shelf item: big rounded cover, title and artist below (no card background). */
 @Composable
 fun RecommendationCard(
     track: Track,
@@ -440,20 +420,16 @@ fun RecommendationCard(
     val activeColor = MaterialTheme.colorScheme.primary
     Column(
         modifier = Modifier
-            .width(136.dp)
+            .width(148.dp)
             .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
-            .background(
-                if (isCurrentTrack) activeColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceVariant
-            )
-            .padding(10.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.surface),
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             if (!track.artworkUrl.isNullOrBlank()) {
@@ -464,14 +440,15 @@ fun RecommendationCard(
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Image(
+                Icon(
                     painter = painterResource(R.drawable.ic_music_note),
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(34.dp)
                 )
             }
 
-            if (isCurrentTrack && isPlaying) {
+            if (isCurrentTrack) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -480,9 +457,9 @@ fun RecommendationCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.GraphicEq,
-                        contentDescription = null,
+                        contentDescription = if (isPlaying) "Играет" else "Пауза",
                         tint = activeColor,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(30.dp)
                     )
                 }
             }

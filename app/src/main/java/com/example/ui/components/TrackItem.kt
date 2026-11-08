@@ -1,24 +1,32 @@
 package com.example.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +42,10 @@ import coil.compose.AsyncImage
 import com.example.R
 import com.example.data.model.Track
 
+/**
+ * Yandex-Music-style track row: flat (no card), 52dp rounded cover with an
+ * equalizer overlay for the current track, title + artist, heart and a "⋮" menu.
+ */
 @Composable
 fun TrackItem(
     track: Track,
@@ -48,25 +60,26 @@ fun TrackItem(
 ) {
     val activeColor = MaterialTheme.colorScheme.primary
     val backgroundColor by animateColorAsState(
-        targetValue = if (isCurrentTrack) activeColor.copy(alpha = 0.16f) else Color.Transparent,
+        targetValue = if (isCurrentTrack) activeColor.copy(alpha = 0.10f) else Color.Transparent,
         label = "trackBgColor"
     )
+    var menuOpen by remember { mutableStateOf(false) }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
             .clickable(onClick = onTrackClick)
-            .padding(horizontal = 10.dp, vertical = 7.dp)
+            .padding(start = 6.dp, end = 2.dp, top = 6.dp, bottom = 6.dp)
             .testTag("track_item_${track.id}"),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Artwork
+        // Cover
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .size(52.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
@@ -74,29 +87,44 @@ fun TrackItem(
                 AsyncImage(
                     model = track.artworkUrl,
                     contentDescription = track.displayTitle,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             } else {
-                Image(
+                Icon(
                     painter = painterResource(R.drawable.ic_music_note),
                     contentDescription = null,
-                    modifier = Modifier.size(24.dp)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
                 )
+            }
+
+            if (isCurrentTrack) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0x80000000)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.GraphicEq,
+                        contentDescription = if (isPlaying) "Играет" else "Пауза",
+                        tint = activeColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
         // Title & Artist
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = track.displayTitle,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Medium,
-                    fontSize = 15.sp
+                    fontSize = 15.5.sp
                 ),
                 color = if (isCurrentTrack) activeColor else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
@@ -115,7 +143,7 @@ fun TrackItem(
                             painter = painterResource(R.drawable.ic_soundcloud),
                             contentDescription = "SoundCloud",
                             tint = Color.Unspecified,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(13.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                     }
@@ -124,7 +152,7 @@ fun TrackItem(
                             painter = painterResource(R.drawable.ic_youtube),
                             contentDescription = "YouTube Music",
                             tint = Color.Unspecified,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(13.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                     }
@@ -133,7 +161,7 @@ fun TrackItem(
                             painter = painterResource(R.drawable.ic_yandex),
                             contentDescription = "Яндекс Музыка",
                             tint = Color.Unspecified,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(13.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                     }
@@ -150,24 +178,26 @@ fun TrackItem(
 
                 if (track.duration != null && track.duration > 0) {
                     Text(
-                        text = " • ${track.formattedDuration}",
+                        text = "  ${track.formattedDuration}",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        maxLines = 1
                     )
                 }
             }
         }
 
-        // Like button
+        // Like (accent heart when liked, outline otherwise)
         IconButton(
             onClick = onLikeClick,
             modifier = Modifier
-                .size(38.dp)
+                .size(40.dp)
                 .testTag("like_button_${track.id}")
         ) {
-            Image(
+            Icon(
                 painter = painterResource(if (isLiked) R.drawable.ic_heart_filled else R.drawable.ic_heart),
                 contentDescription = if (isLiked) "Удалить из любимых" else "Добавить в любимые",
+                tint = if (isLiked) activeColor else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -175,18 +205,43 @@ fun TrackItem(
         if (trailingAction != null) {
             trailingAction()
         } else {
-            // Add to playlist
-            IconButton(
-                onClick = onAddToPlaylistClick,
-                modifier = Modifier
-                    .size(38.dp)
-                    .testTag("add_to_playlist_${track.id}")
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_plus),
-                    contentDescription = "Добавить в плейлист",
-                    modifier = Modifier.size(18.dp)
-                )
+            // "⋮" menu
+            Box {
+                IconButton(
+                    onClick = { menuOpen = true },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .testTag("track_more_${track.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Ещё",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                    shape = RoundedCornerShape(14.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Добавить в плейлист") },
+                        onClick = {
+                            menuOpen = false
+                            onAddToPlaylistClick()
+                        },
+                        modifier = Modifier.testTag("add_to_playlist_${track.id}")
+                    )
+                    DropdownMenuItem(
+                        text = { Text(if (isLiked) "Убрать из любимых" else "Мне нравится") },
+                        onClick = {
+                            menuOpen = false
+                            onLikeClick()
+                        }
+                    )
+                }
             }
         }
     }

@@ -1,6 +1,18 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.scale
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
@@ -188,7 +200,7 @@ fun MainScreen(
         bottomBar = {
             Column(
                 modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(MaterialTheme.colorScheme.background)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
                 // Mini Player Bar
@@ -215,152 +227,72 @@ fun MainScreen(
                     }
                 }
 
-                // Clean, soft-rounded Navigation Bar (spacious, never overlapping)
-                Surface(
+                // Flat Yandex-Music-style navigation bar: no pill indicator, icon + small label,
+                // hairline on top and a slightly translucent "glass" background from the desktop app.
+                val isDetailActive = selectedPlaylistDetail != null || selectedUserProfileLogin != null
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("main_bottom_nav"),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 6.dp
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+                        .testTag("main_bottom_nav")
                 ) {
-                    NavigationBar(
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                        tonalElevation = 0.dp,
-                        modifier = Modifier.height(68.dp)
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(58.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val isDetailActive = selectedPlaylistDetail != null || selectedUserProfileLogin != null
-
-                        // Home
-                        val homeSelected = selectedTab == NavTab.HOME && !isDetailActive
-                        NavigationBarItem(
-                            selected = homeSelected,
+                        LeafNavItem(
+                            title = "Главная",
+                            iconRes = R.drawable.ic_home,
+                            selected = selectedTab == NavTab.HOME && !isDetailActive,
+                            tag = "nav_home",
+                            modifier = Modifier.weight(1f),
                             onClick = {
                                 selectedPlaylistDetail = null
                                 selectedUserProfileLogin = null
                                 selectedTab = NavTab.HOME
-                            },
-                            icon = {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_home),
-                                    contentDescription = "Главная",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            label = {
-                                Text(
-                                    "Главная",
-                                    fontSize = 11.sp,
-                                    fontWeight = if (homeSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = activeAccent,
-                                selectedTextColor = activeAccent,
-                                indicatorColor = activeAccent.copy(alpha = 0.18f),
-                                unselectedIconColor = onSurfaceVariant,
-                                unselectedTextColor = onSurfaceVariant
-                            ),
-                            modifier = Modifier.testTag("nav_home")
+                            }
                         )
-
-                        // Search
-                        val searchSelected = selectedTab == NavTab.SEARCH && !isDetailActive
-                        NavigationBarItem(
-                            selected = searchSelected,
+                        LeafNavItem(
+                            title = "Поиск",
+                            iconRes = R.drawable.ic_search,
+                            selected = selectedTab == NavTab.SEARCH && !isDetailActive,
+                            tag = "nav_search",
+                            modifier = Modifier.weight(1f),
                             onClick = {
                                 selectedPlaylistDetail = null
                                 selectedUserProfileLogin = null
                                 selectedTab = NavTab.SEARCH
-                            },
-                            icon = {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_search),
-                                    contentDescription = "Поиск",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            label = {
-                                Text(
-                                    "Поиск",
-                                    fontSize = 11.sp,
-                                    fontWeight = if (searchSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = activeAccent,
-                                selectedTextColor = activeAccent,
-                                indicatorColor = activeAccent.copy(alpha = 0.18f),
-                                unselectedIconColor = onSurfaceVariant,
-                                unselectedTextColor = onSurfaceVariant
-                            ),
-                            modifier = Modifier.testTag("nav_search")
+                            }
                         )
-
-                        // Library
-                        val librarySelected = (selectedTab == NavTab.LIBRARY || selectedPlaylistDetail != null) && selectedUserProfileLogin == null
-                        NavigationBarItem(
-                            selected = librarySelected,
+                        LeafNavItem(
+                            title = "Медиатека",
+                            iconRes = R.drawable.ic_bookshelf,
+                            selected = (selectedTab == NavTab.LIBRARY || selectedPlaylistDetail != null) && selectedUserProfileLogin == null,
+                            tag = "nav_library",
+                            modifier = Modifier.weight(1f),
                             onClick = {
                                 selectedPlaylistDetail = null
                                 selectedUserProfileLogin = null
                                 selectedTab = NavTab.LIBRARY
-                            },
-                            icon = {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_bookshelf),
-                                    contentDescription = "Медиатека",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            label = {
-                                Text(
-                                    "Медиатека",
-                                    fontSize = 11.sp,
-                                    fontWeight = if (librarySelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = activeAccent,
-                                selectedTextColor = activeAccent,
-                                indicatorColor = activeAccent.copy(alpha = 0.18f),
-                                unselectedIconColor = onSurfaceVariant,
-                                unselectedTextColor = onSurfaceVariant
-                            ),
-                            modifier = Modifier.testTag("nav_library")
+                            }
                         )
-
-                        // Profile / Settings
-                        val profileSelected = selectedTab == NavTab.PROFILE && !isDetailActive
-                        NavigationBarItem(
-                            selected = profileSelected,
+                        LeafNavItem(
+                            title = "Настройки",
+                            iconRes = R.drawable.ic_settings,
+                            selected = selectedTab == NavTab.PROFILE && !isDetailActive,
+                            tag = "nav_profile",
+                            modifier = Modifier.weight(1f),
                             onClick = {
                                 selectedPlaylistDetail = null
                                 selectedUserProfileLogin = null
                                 selectedTab = NavTab.PROFILE
-                            },
-                            icon = {
-                                Image(
-                                    painter = painterResource(R.drawable.ic_settings),
-                                    contentDescription = "Настройки",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            label = {
-                                Text(
-                                    "Настройки",
-                                    fontSize = 11.sp,
-                                    fontWeight = if (profileSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = activeAccent,
-                                selectedTextColor = activeAccent,
-                                indicatorColor = activeAccent.copy(alpha = 0.18f),
-                                unselectedIconColor = onSurfaceVariant,
-                                unselectedTextColor = onSurfaceVariant
-                            ),
-                            modifier = Modifier.testTag("nav_profile")
+                            }
                         )
                     }
                 }
@@ -433,5 +365,50 @@ fun MainScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LeafNavItem(
+    title: String,
+    iconRes: Int,
+    selected: Boolean,
+    tag: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    val inactive = MaterialTheme.colorScheme.onSurfaceVariant
+    val tint by animateColorAsState(if (selected) accent else inactive, label = "navTint")
+    val iconScale by animateFloatAsState(if (selected) 1.08f else 1f, label = "navScale")
+
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .testTag(tag),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = title,
+            tint = tint,
+            modifier = Modifier
+                .size(24.dp)
+                .scale(iconScale)
+        )
+        Spacer(modifier = Modifier.height(3.dp))
+        Text(
+            text = title,
+            fontSize = 10.5.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            color = tint,
+            maxLines = 1
+        )
     }
 }
